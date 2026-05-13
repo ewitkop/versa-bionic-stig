@@ -615,13 +615,16 @@ def check_v219174_account_lockout(exe: RemoteExecutor) -> Finding:
         "V-219174", "SV-219174r879631_rule", "CAT II",
         "Account must lock after 3 consecutive invalid login attempts",
         description="Account lockout mitigates brute-force attacks against user credentials.",
-        check_method="Searched /etc/pam.d/common-auth for pam_tally2 or pam_faillock with "
+        check_method="Searched /etc/security/faillock.conf  for silent|audit|deny|fail_interval with "
                      "'deny=N' and verified N <= 3.",
-        fix="1. Edit /etc/pam.d/common-auth\n"
+        fix="1. Edit /etc/security/faillock.conf \n"
             "2. Add before pam_unix:  auth required pam_tally2.so deny=3 onerr=fail "
             "unlock_time=900 audit\n"
             "3. Also add to /etc/pam.d/common-account:  account required pam_tally2.so")
-    rc, out, _ = exe.run("grep -E 'pam_tally2|pam_faillock' /etc/pam.d/common-auth 2>/dev/null")
+    
+    #egrep 'silent|audit|deny|fail_interval| unlock_time' /etc/security/faillock.conf
+
+    rc, out, _ = exe.run("egrep 'silent|audit|deny|fail_interval| unlock_time' /etc/security/faillock.conf 2>/dev/null")
     f.evidence = out
     match = re.search(r'deny=(\d+)', out)
     if match:
