@@ -548,7 +548,7 @@ def check_v219171_pw_history(exe: RemoteExecutor) -> Finding:
         fix="1. Edit /etc/pam.d/common-password\n"
             "2. On the pam_unix.so line, add:  remember=5\n"
             "   Or add a pam_pwhistory.so line:  password required pam_pwhistory.so remember=5")
-    rc, out, _ = exe.run("grep -E 'pam_unix|pam_pwhistory' /etc/pam.d/common-password 2>/dev/null")
+    rc, out, _ = exe.run("grep -E 'remember' /etc/pam.d/common-password 2>/dev/null")
     f.evidence = out
     match = re.search(r'remember=(\d+)', out)
     if match:
