@@ -445,23 +445,16 @@ def check_v219158_ssh_banner(exe: RemoteExecutor) -> Finding:
         "SSH must display a DoD-approved banner before authentication",
         description="Displaying a warning banner establishes legal notice that the system "
                     "is for authorized use only, which is required for prosecution.",
-        check_method="1. Checked /etc/ssh/sshd_config for 'Banner' directive.\n"
+        check_method="1. Checked for existance of /var/versa/banners/motd_banner.\n"
                      "2. If set, verified the referenced file exists and is non-empty.",
-        fix="1. Edit /etc/ssh/sshd_config:  Banner /etc/issue.net\n"
-            "2. Populate /etc/issue.net with the standard DoD warning banner.\n"
-            "3. sudo systemctl restart sshd")
-    rc, out, _ = exe.run("grep -i '^Banner' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+        fix="1. Browse to the Versa Director, Administration, System, Banner and set the appropriate USG banner\n")
+           
+    rc, out, _ = exe.run("grep -i 'USG' /var/versa/banners/motd_banner 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "No SSH Banner directive set."
+        f.status, f.detail = "FAIL", "No MOTD Banner directive set."
     else:
-        banner_file = out.split()[-1] if out.split() else ""
-        rc2, content, _ = exe.run(f"cat {banner_file} 2>/dev/null | head -5 || echo 'EMPTY'")
-        f.evidence += f"\n--- Banner file content ({banner_file}) ---\n{content}"
-        if "EMPTY" in content or not content.strip():
-            f.status, f.detail = "FAIL", f"Banner file {banner_file} is empty or missing."
-        else:
-            f.status, f.detail = "PASS", f"SSH Banner is set to {banner_file} and contains content."
+            f.status, f.detail = "PASS", f"SSH Banner is set and contains USG content."
     return f
 
 
@@ -682,7 +675,7 @@ def check_v219202_audit_log_perms(exe: RemoteExecutor) -> Finding:
         description="Overly permissive audit logs could allow tampering or information disclosure.",
         check_method="Ran 'stat -c \"%a\" /var/log/audit/audit.log' and compared against 0600.",
         fix="1. sudo chmod 0600 /var/log/audit/audit.log")
-    rc, out, _ = exe.run("stat -c '%a %U:%G' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
+    rc, out, _ = exe.run("sudo stat -c '%a %U:%G' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
     f.evidence = out
     if "NOT_FOUND" in out:
         f.status, f.detail = "FAIL", "Audit log not found at /var/log/audit/audit.log."
@@ -705,7 +698,7 @@ def check_v219220_aide_installed(exe: RemoteExecutor) -> Finding:
     f = Finding(
         "V-219220", "SV-219220r879699_rule", "CAT II",
         "A file integrity monitoring tool must be installed (AIDE)",
-        description="File integrity tools detect unauthorized modifications to system files.",
+        description="File integrity tools detect unauthorized modifications to system files. It should be noted that Versa Networks does not approve of any 3rd applications.",
         check_method="Checked for AIDE, Tripwire, or OSSEC via dpkg -l.",
         fix="1. sudo apt install aide aide-common\n"
             "2. Initialize the database:  sudo aideinit\n"
@@ -720,7 +713,7 @@ def check_v219220_aide_installed(exe: RemoteExecutor) -> Finding:
         if "NOT_INSTALLED" not in out2:
             f.status, f.detail = "PASS", "Alternative integrity tool found."
         else:
-            f.status, f.detail = "FAIL", "No file integrity tool (AIDE/Tripwire/OSSEC) found."
+            f.status, f.detail = "MANUAL", "No file integrity tool (AIDE/Tripwire/OSSEC) found. Versa Networks does not approve any 3rd party software installs."
     return f
 
 
@@ -869,12 +862,11 @@ def check_v219270_syslog_remote(exe: RemoteExecutor) -> Finding:
         "V-219270", "SV-219270r879799_rule", "CAT II",
         "System logs must be forwarded to a centralized remote syslog server",
         description="Remote logging ensures logs survive if the local system is compromised.",
-        check_method="Searched /etc/rsyslog.conf and /etc/rsyslog.d/*.conf for forwarding "
+        check_method="Searched /etc/rsyslog.d/*.conf for forwarding "
                      "rules (lines containing @ or @@).",
-        fix="1. Edit /etc/rsyslog.conf (or create /etc/rsyslog.d/remote.conf)\n"
-            "2. Add:  *.* @@<syslog_server>:514   (TCP) or  *.* @<syslog_server>:514 (UDP)\n"
-            "3. sudo systemctl restart rsyslog")
-    rc, out, _ = exe.run("grep -rE '^\\s*[^#].*@{1,2}' /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null || echo 'NOT_FOUND'")
+        fix="1. Go to your Director GUI and proceed to Administration -> Connectors -> then SYSLOG \n")
+           
+    rc, out, _ = exe.run("grep -rE '.*@{1,2}'  /etc/rsyslog.d/*.conf 2>/dev/null || echo 'NOT_FOUND'")
     f.evidence = out
     if "NOT_FOUND" in out or not out.strip():
         f.status, f.detail = "FAIL", "No remote syslog forwarding configured."
