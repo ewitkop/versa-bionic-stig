@@ -106,6 +106,21 @@ class RemoteExecutor:
         return (rc,
                 stdout.read().decode(errors="replace").strip(),
                 stderr.read().decode(errors="replace").strip())
+    
+    def run_sudo(self, cmd: str, timeout: int = 30) -> tuple[int, str, str]:
+        """Run a command with sudo, automatically responding to the password prompt.
+        Uses 'sudo -S' so the password is read from stdin."""
+        if not self.sudo_password:
+            return self.run(f"sudo {cmd}", timeout=timeout)
+        full_cmd = f"echo '{self.sudo_password}' | sudo -S {cmd}"
+        stdin, stdout, stderr = self.client.exec_command(full_cmd, timeout=timeout)
+        exit_code = stdout.channel.recv_exit_status()
+        out = stdout.read().decode(errors="replace").strip()
+        err = stderr.read().decode(errors="replace").strip()
+        # Filter out the sudo password prompt line from stderr
+        err_lines = [ln for ln in err.splitlines()
+                     if not ln.strip().startswith("[sudo] password")]
+        return (exit_code, out, "\n".join(err_lines).strip())
 
     def close(self):
         self.client.close()
@@ -667,23 +682,21 @@ def check_v219201_auditd_enabled(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_v219202_audit_log_perms(exe: RemoteExecutor) -> Finding:
-    """V-219202 | Audit log must have mode <= 0600."""
-    f = Finding(
-        "V-219202", "SV-219202r879665_rule", "CAT II",
-        "Audit log files must have permissions 0600 or more restrictive",
-        description="Overly permissive audit logs could allow tampering or information disclosure.",
-        check_method="Ran 'stat -c \"%a\" /var/log/audit/audit.log' and compared against 0600.",
-        fix="1. sudo chmod 0600 /var/log/audit/audit.log")
-    rc, out, _ = exe.run("sudo stat -c '%a %U:%G' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
-    f.evidence = out
+def check_v238230_audit_log_perms(exe: RemoteExecutor) -> Finding:
+    """V-238230 | Audit log files must have mode 0600 or less."""
+    f = Finding("V-238230", "SV-238230r653865_rule", "CAT II",
+                "Ubuntu 18 audit log files must have mode 0600 or less permissive",
+                fix="sudo chmod 0600 /var/log/audit/audit.log.")
+    rc, out, _ = exe.run_sudo("stat -c '%a' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
+
+
     if "NOT_FOUND" in out:
         f.status, f.detail = "FAIL", "Audit log not found at /var/log/audit/audit.log."
     else:
         try:
-            mode = int(out.split()[0], 8)
+            mode = int(out.strip(), 8)
             f.status = "PASS" if mode <= 0o600 else "FAIL"
-            f.detail = f"Audit log permissions: {oct(mode)}" + ("" if mode <= 0o600 else " (must be <= 0600)")
+            f.detail = f"Audit log mode: {oct(mode)}" + ("" if mode <= 0o600 else " (must be ≤ 0600)")
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse: {out}"
     return f
@@ -1040,7 +1053,7 @@ ALL_CHECKS = [
     # CAT II — Audit
     check_v219200_auditd_installed,
     check_v219201_auditd_enabled,
-    check_v219202_audit_log_perms,
+    check_v238230_audit_log_perms,
     # CAT II — Integrity
     check_v219220_aide_installed,
     # CAT II — File permissions
