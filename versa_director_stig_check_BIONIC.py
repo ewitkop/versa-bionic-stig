@@ -19,6 +19,8 @@ Usage:
     python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --password
     python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --key ~/.ssh/id_rsa
     python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --password --output report.html
+    
+Note: Ensure you are using the default SSH username that will have the necessary access to check configuration files.
 """
 
 import argparse
@@ -88,16 +90,17 @@ class StigReport:
 class RemoteExecutor:
     """Thin wrapper around paramiko for running commands on the Director."""
 
+
     def __init__(self, host: str, username: str, password: Optional[str] = None,
                  key_path: Optional[str] = None, port: int = 22, timeout: int = 30):
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        kw = dict(hostname=host, port=port, username=username, timeout=timeout)
-        if key_path:
-            kw["key_filename"] = os.path.expanduser(key_path)
+        self.sudo_password = password  # stored for sudo prompts
+        connect_kwargs = dict(hostname=host, port=port, username=username, timeout=timeout,
+                              look_for_keys=False, allow_agent=False)
         if password:
-            kw["password"] = password
-        self.client.connect(**kw)
+            connect_kwargs["password"] = password
+        self.client.connect(**connect_kwargs)
 
     def run(self, cmd: str, timeout: int = 30) -> tuple[int, str, str]:
         """Return (exit_status, stdout, stderr)."""
@@ -106,6 +109,21 @@ class RemoteExecutor:
         return (rc,
                 stdout.read().decode(errors="replace").strip(),
                 stderr.read().decode(errors="replace").strip())
+    
+    def run_sudo(self, cmd: str, timeout: int = 30) -> tuple[int, str, str]:
+        """Run a command with sudo, automatically responding to the password prompt.
+        Uses 'sudo -S' so the password is read from stdin."""
+        if not self.sudo_password:
+            return self.run(f"sudo {cmd}", timeout=timeout)
+        full_cmd = f"echo '{self.sudo_password}' | sudo -S {cmd}"
+        stdin, stdout, stderr = self.client.exec_command(full_cmd, timeout=timeout)
+        exit_code = stdout.channel.recv_exit_status()
+        out = stdout.read().decode(errors="replace").strip()
+        err = stderr.read().decode(errors="replace").strip()
+        # Filter out the sudo password prompt line from stderr
+        err_lines = [ln for ln in err.splitlines()
+                     if not ln.strip().startswith("[sudo] password")]
+        return (exit_code, out, "\n".join(err_lines).strip())
 
     def close(self):
         self.client.close()
@@ -298,7 +316,7 @@ def check_v219152_ssh_root_login(exe: RemoteExecutor) -> Finding:
         fix="1. Edit /etc/ssh/sshd_config\n"
             "2. Set:  PermitRootLogin no\n"
             "3. sudo systemctl restart sshd")
-    rc, out, _ = exe.run("grep -i '^PermitRootLogin' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^PermitRootLogin' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "PermitRootLogin not explicitly set (may default to yes)."
@@ -341,7 +359,7 @@ def check_v219154_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
         fix="1. Edit /etc/ssh/sshd_config\n"
             "2. Set:  ClientAliveInterval 600\n"
             "3. sudo systemctl restart sshd")
-    rc, out, _ = exe.run("grep -i '^ClientAliveInterval' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveInterval' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "ClientAliveInterval is not set."
@@ -368,7 +386,7 @@ def check_v219155_ssh_alive_count(exe: RemoteExecutor) -> Finding:
         fix="1. Edit /etc/ssh/sshd_config\n"
             "2. Set:  ClientAliveCountMax 1\n"
             "3. sudo systemctl restart sshd")
-    rc, out, _ = exe.run("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "ClientAliveCountMax not set."
@@ -396,7 +414,7 @@ def check_v219156_ssh_ciphers(exe: RemoteExecutor) -> Finding:
             "3. sudo systemctl restart sshd")
     approved = {"aes256-ctr", "aes192-ctr", "aes128-ctr",
                 "aes256-gcm@openssh.com", "aes128-gcm@openssh.com"}
-    rc, out, _ = exe.run("grep -i '^Ciphers' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^Ciphers' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "No explicit cipher list configured."
@@ -424,7 +442,7 @@ def check_v219157_ssh_macs(exe: RemoteExecutor) -> Finding:
             "3. sudo systemctl restart sshd")
     approved = {"hmac-sha2-256", "hmac-sha2-512",
                 "hmac-sha2-256-etm@openssh.com", "hmac-sha2-512-etm@openssh.com"}
-    rc, out, _ = exe.run("grep -i '^MACs' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^MACs' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "No explicit MAC list configured."
@@ -445,23 +463,16 @@ def check_v219158_ssh_banner(exe: RemoteExecutor) -> Finding:
         "SSH must display a DoD-approved banner before authentication",
         description="Displaying a warning banner establishes legal notice that the system "
                     "is for authorized use only, which is required for prosecution.",
-        check_method="1. Checked /etc/ssh/sshd_config for 'Banner' directive.\n"
+        check_method="1. Checked for existance of a USG DOD in /var/versa/banners/motd_banner.\n"
                      "2. If set, verified the referenced file exists and is non-empty.",
-        fix="1. Edit /etc/ssh/sshd_config:  Banner /etc/issue.net\n"
-            "2. Populate /etc/issue.net with the standard DoD warning banner.\n"
-            "3. sudo systemctl restart sshd")
-    rc, out, _ = exe.run("grep -i '^Banner' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+        fix="1. Browse to the Versa Director, Administration, System, Banner and set the appropriate USG banner\n")
+           
+    rc, out, _ = exe.run("grep -i 'USG' /var/versa/banners/motd_banner 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "No SSH Banner directive set."
+        f.status, f.detail = "FAIL", "No USG DOD MOTD Banner directive set."
     else:
-        banner_file = out.split()[-1] if out.split() else ""
-        rc2, content, _ = exe.run(f"cat {banner_file} 2>/dev/null | head -5 || echo 'EMPTY'")
-        f.evidence += f"\n--- Banner file content ({banner_file}) ---\n{content}"
-        if "EMPTY" in content or not content.strip():
-            f.status, f.detail = "FAIL", f"Banner file {banner_file} is empty or missing."
-        else:
-            f.status, f.detail = "PASS", f"SSH Banner is set to {banner_file} and contains content."
+            f.status, f.detail = "PASS", f"SSH Banner is set and contains USG content."
     return f
 
 
@@ -548,7 +559,7 @@ def check_v219171_pw_history(exe: RemoteExecutor) -> Finding:
         fix="1. Edit /etc/pam.d/common-password\n"
             "2. On the pam_unix.so line, add:  remember=5\n"
             "   Or add a pam_pwhistory.so line:  password required pam_pwhistory.so remember=5")
-    rc, out, _ = exe.run("grep -E 'pam_unix|pam_pwhistory' /etc/pam.d/common-password 2>/dev/null")
+    rc, out, _ = exe.run("grep -E 'remember=5' /etc/pam.d/common-password 2>/dev/null")
     f.evidence = out
     match = re.search(r'remember=(\d+)', out)
     if match:
@@ -615,16 +626,13 @@ def check_v219174_account_lockout(exe: RemoteExecutor) -> Finding:
         "V-219174", "SV-219174r879631_rule", "CAT II",
         "Account must lock after 3 consecutive invalid login attempts",
         description="Account lockout mitigates brute-force attacks against user credentials.",
-        check_method="Searched /etc/security/faillock.conf  for silent|audit|deny|fail_interval with "
+        check_method="Searched /etc/pam.d/common-auth for pam_tally2 or pam_faillock with "
                      "'deny=N' and verified N <= 3.",
-        fix="1. Edit /etc/security/faillock.conf \n"
+        fix="1. Edit /etc/pam.d/common-auth\n"
             "2. Add before pam_unix:  auth required pam_tally2.so deny=3 onerr=fail "
             "unlock_time=900 audit\n"
             "3. Also add to /etc/pam.d/common-account:  account required pam_tally2.so")
-    
-    #egrep 'silent|audit|deny|fail_interval| unlock_time' /etc/security/faillock.conf
-
-    rc, out, _ = exe.run("egrep 'silent|audit|deny|fail_interval| unlock_time' /etc/security/faillock.conf 2>/dev/null")
+    rc, out, _ = exe.run("grep -E 'pam_tally2|pam_faillock' /etc/pam.d/common-auth 2>/dev/null")
     f.evidence = out
     match = re.search(r'deny=(\d+)', out)
     if match:
@@ -677,23 +685,21 @@ def check_v219201_auditd_enabled(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_v219202_audit_log_perms(exe: RemoteExecutor) -> Finding:
-    """V-219202 | Audit log must have mode <= 0600."""
-    f = Finding(
-        "V-219202", "SV-219202r879665_rule", "CAT II",
-        "Audit log files must have permissions 0600 or more restrictive",
-        description="Overly permissive audit logs could allow tampering or information disclosure.",
-        check_method="Ran 'stat -c \"%a\" /var/log/audit/audit.log' and compared against 0600.",
-        fix="1. sudo chmod 0600 /var/log/audit/audit.log")
-    rc, out, _ = exe.run("stat -c '%a %U:%G' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
-    f.evidence = out
+def check_v238230_audit_log_perms(exe: RemoteExecutor) -> Finding:
+    """V-238230 | Audit log files must have mode 0600 or less."""
+    f = Finding("V-238230", "SV-238230r653865_rule", "CAT II",
+                "Ubuntu 18 audit log files must have mode 0600 or less permissive",
+                fix="sudo chmod 0600 /var/log/audit/audit.log.")
+    rc, out, _ = exe.run_sudo("stat -c '%a' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
+
+
     if "NOT_FOUND" in out:
         f.status, f.detail = "FAIL", "Audit log not found at /var/log/audit/audit.log."
     else:
         try:
-            mode = int(out.split()[0], 8)
+            mode = int(out.strip(), 8)
             f.status = "PASS" if mode <= 0o600 else "FAIL"
-            f.detail = f"Audit log permissions: {oct(mode)}" + ("" if mode <= 0o600 else " (must be <= 0600)")
+            f.detail = f"Audit log mode: {oct(mode)}" + ("" if mode <= 0o600 else " (must be ≤ 0600)")
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse: {out}"
     return f
@@ -708,7 +714,7 @@ def check_v219220_aide_installed(exe: RemoteExecutor) -> Finding:
     f = Finding(
         "V-219220", "SV-219220r879699_rule", "CAT II",
         "A file integrity monitoring tool must be installed (AIDE)",
-        description="File integrity tools detect unauthorized modifications to system files.",
+        description="File integrity tools detect unauthorized modifications to system files. It should be noted that Versa Networks does not approve of any 3rd applications.",
         check_method="Checked for AIDE, Tripwire, or OSSEC via dpkg -l.",
         fix="1. sudo apt install aide aide-common\n"
             "2. Initialize the database:  sudo aideinit\n"
@@ -723,7 +729,7 @@ def check_v219220_aide_installed(exe: RemoteExecutor) -> Finding:
         if "NOT_INSTALLED" not in out2:
             f.status, f.detail = "PASS", "Alternative integrity tool found."
         else:
-            f.status, f.detail = "FAIL", "No file integrity tool (AIDE/Tripwire/OSSEC) found."
+            f.status, f.detail = "MANUAL", "No file integrity tool (AIDE/Tripwire/OSSEC) found. Versa Networks does not approve any 3rd party software installs."
     return f
 
 
@@ -872,12 +878,11 @@ def check_v219270_syslog_remote(exe: RemoteExecutor) -> Finding:
         "V-219270", "SV-219270r879799_rule", "CAT II",
         "System logs must be forwarded to a centralized remote syslog server",
         description="Remote logging ensures logs survive if the local system is compromised.",
-        check_method="Searched /etc/rsyslog.conf and /etc/rsyslog.d/*.conf for forwarding "
+        check_method="Searched /etc/rsyslog.d/*.conf for forwarding "
                      "rules (lines containing @ or @@).",
-        fix="1. Edit /etc/rsyslog.conf (or create /etc/rsyslog.d/remote.conf)\n"
-            "2. Add:  *.* @@<syslog_server>:514   (TCP) or  *.* @<syslog_server>:514 (UDP)\n"
-            "3. sudo systemctl restart rsyslog")
-    rc, out, _ = exe.run("grep -rE '^\\s*[^#].*@{1,2}' /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null || echo 'NOT_FOUND'")
+        fix="1. Go to your Director GUI and proceed to Administration -> Connectors -> then SYSLOG \n")
+           
+    rc, out, _ = exe.run("grep -rE '.*@{1,2}'  /etc/rsyslog.d/*.conf 2>/dev/null || echo 'NOT_FOUND'")
     f.evidence = out
     if "NOT_FOUND" in out or not out.strip():
         f.status, f.detail = "FAIL", "No remote syslog forwarding configured."
@@ -1051,7 +1056,7 @@ ALL_CHECKS = [
     # CAT II — Audit
     check_v219200_auditd_installed,
     check_v219201_auditd_enabled,
-    check_v219202_audit_log_perms,
+    check_v238230_audit_log_perms,
     # CAT II — Integrity
     check_v219220_aide_installed,
     # CAT II — File permissions
