@@ -1021,6 +1021,702 @@ def check_versa_tls(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "PASS", "TLS configuration appears to enforce 1.2+."
     return f
 
+#CAT III start here
+
+
+# ── CAT III — LOW ────────────────────────────────────────────────────────
+
+def check_030000_ssh_banner(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030000 | SSH must display a login banner."""
+    f = Finding("UBTU-18-030000", "SV-219210r853443_rule", "CAT III",
+                "Ubuntu 18.04 must display the Standard Mandatory DoD Notice before SSH login",
+                fix="Set 'Banner /etc/issue.net' in /etc/ssh/sshd_config and populate /etc/issue.net.")
+    rc, out, _ = exe.run("grep -i '^Banner' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "SSH Banner directive is not set in sshd_config."
+    elif "/etc/issue" in out:
+        rc2, out2, _ = exe.run("wc -l < /etc/issue.net 2>/dev/null || echo '0'")
+        lines = int(out2.strip()) if out2.strip().isdigit() else 0
+        if lines > 0:
+            f.status, f.detail = "PASS", f"SSH Banner is configured: {out.strip()} ({lines} lines)."
+        else:
+            f.status, f.detail = "FAIL", f"Banner file configured but empty or missing ({out.strip()})."
+    else:
+        f.status, f.detail = "FAIL", f"SSH Banner not properly configured: {out.strip()}"
+    return f
+
+
+def check_030001_login_banner_content(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030001 | /etc/issue.net must contain the Standard Mandatory DoD Notice."""
+    f = Finding("UBTU-18-030001", "SV-219211r853444_rule", "CAT III",
+                "Ubuntu 18.04 must display the DoD-approved system use notification message",
+                fix="Populate /etc/issue.net with the Standard Mandatory DoD Notice and Consent Banner.")
+    rc, out, _ = exe.run("cat /etc/issue.net 2>/dev/null || echo 'NOT_FOUND'")
+    if "NOT_FOUND" in out or not out.strip():
+        f.status, f.detail = "FAIL", "/etc/issue.net is missing or empty."
+    elif "unauthorized" in out.lower() or "consent" in out.lower() or "u.s. government" in out.lower():
+        f.status, f.detail = "PASS", "Banner contains expected DoD notice language."
+    else:
+        f.status, f.detail = "MANUAL", f"Banner file exists but review for DoD compliance. First line: {out.splitlines()[0][:80]}"
+    return f
+
+
+def check_030002_motd_banner(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030002 | /etc/motd must not contain prohibited info."""
+    f = Finding("UBTU-18-030002", "SV-219212r853445_rule", "CAT III",
+                "Ubuntu 18.04 /etc/motd must not contain OS/patch info that could aid attackers",
+                fix="Remove or edit /etc/motd to remove OS version, patch level, or proprietary info.")
+    rc, out, _ = exe.run("cat /etc/motd 2>/dev/null || echo 'NOT_FOUND'")
+    if "NOT_FOUND" in out or not out.strip():
+        f.status, f.detail = "PASS", "/etc/motd is empty or does not exist."
+    elif re.search(r'ubuntu|18\.04|kernel|patch|version', out, re.IGNORECASE):
+        f.status, f.detail = "FAIL", f"MOTD may contain OS/version info: {out[:200]}"
+    else:
+        f.status, f.detail = "MANUAL", f"MOTD exists — verify no prohibited info: {out[:200]}"
+    return f
+
+
+def check_030003_local_console_banner(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030003 | /etc/issue must contain the DoD notice for local login."""
+    f = Finding("UBTU-18-030003", "SV-219213r853446_rule", "CAT III",
+                "Ubuntu 18.04 /etc/issue must contain the DoD notice for local console login",
+                fix="Populate /etc/issue with the Standard Mandatory DoD Notice and Consent Banner.")
+    rc, out, _ = exe.run("cat /etc/issue 2>/dev/null || echo 'NOT_FOUND'")
+    if "NOT_FOUND" in out or not out.strip():
+        f.status, f.detail = "FAIL", "/etc/issue is missing or empty."
+    elif "unauthorized" in out.lower() or "consent" in out.lower() or "u.s. government" in out.lower():
+        f.status, f.detail = "PASS", "/etc/issue contains expected DoD notice language."
+    else:
+        f.status, f.detail = "MANUAL", f"/etc/issue exists but review for DoD compliance. First line: {out.splitlines()[0][:80]}"
+    return f
+
+
+def check_030100_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030100 | SSH ClientAliveInterval must be 600 or less."""
+    f = Finding("UBTU-18-030100", "SV-219214r853447_rule", "CAT III",
+                "Ubuntu 18.04 must configure SSH ClientAliveInterval to 600 or less",
+                fix="Set 'ClientAliveInterval 600' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveInterval' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "ClientAliveInterval is not set."
+    else:
+        try:
+            val = int(out.split()[-1])
+            if 1 <= val <= 600:
+                f.status, f.detail = "PASS", f"ClientAliveInterval is {val} seconds."
+            else:
+                f.status, f.detail = "FAIL", f"ClientAliveInterval is {val} (must be ≤ 600 and > 0)."
+        except (ValueError, IndexError):
+            f.status, f.detail = "MANUAL", f"Could not parse: {out}"
+    return f
+
+
+def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030101 | SSH ClientAliveCountMax must be 1."""
+    f = Finding("UBTU-18-030101", "SV-219215r853448_rule", "CAT III",
+                "Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1",
+                fix="Set 'ClientAliveCountMax 1' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "ClientAliveCountMax is not set (default is 3)."
+    else:
+        try:
+            val = int(out.split()[-1])
+            f.status = "PASS" if val == 1 else "FAIL"
+            f.detail = f"ClientAliveCountMax is {val}" + ("." if val == 1 else " (must be 1).")
+        except (ValueError, IndexError):
+            f.status, f.detail = "MANUAL", f"Could not parse: {out}"
+    return f
+
+
+def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030102 | Shell TMOUT must be 600 or less."""
+    f = Finding("UBTU-18-030102", "SV-219216r853449_rule", "CAT III",
+                "Ubuntu 18.04 must set a session timeout of 600 seconds or less (TMOUT)",
+                fix="Add 'TMOUT=600' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/tmout.sh.")
+    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile /etc/profile.d/ /etc/bash.bashrc 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "TMOUT is not configured."
+    else:
+        match = re.search(r'TMOUT\s*=\s*(\d+)', out)
+        if match:
+            val = int(match.group(1))
+            if 1 <= val <= 600:
+                f.status, f.detail = "PASS", f"TMOUT is set to {val} seconds."
+            else:
+                f.status, f.detail = "FAIL", f"TMOUT is {val} (must be ≤ 600 and > 0)."
+        else:
+            f.status, f.detail = "MANUAL", f"TMOUT referenced but could not parse: {out[:200]}"
+    return f
+
+
+def check_030200_ssh_x11_forwarding(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030200 | SSH X11 forwarding must be disabled."""
+    f = Finding("UBTU-18-030200", "SV-219217r853450_rule", "CAT III",
+                "Ubuntu 18.04 must not allow SSH X11 forwarding",
+                fix="Set 'X11Forwarding no' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run("grep -i '^X11Forwarding' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "X11Forwarding is not explicitly set (default may be yes)."
+    elif "no" in out.lower():
+        f.status, f.detail = "PASS", "X11Forwarding is disabled."
+    else:
+        f.status, f.detail = "FAIL", f"X11Forwarding is enabled: {out.strip()}"
+    return f
+
+
+def check_030201_ssh_user_env(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030201 | SSH must not allow PermitUserEnvironment."""
+    f = Finding("UBTU-18-030201", "SV-219218r853451_rule", "CAT III",
+                "Ubuntu 18.04 SSH must not allow PermitUserEnvironment",
+                fix="Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out or "no" in out.lower():
+        f.status, f.detail = "PASS", "PermitUserEnvironment is disabled."
+    else:
+        f.status, f.detail = "FAIL", f"PermitUserEnvironment is enabled: {out.strip()}"
+    return f
+
+
+def check_030202_ssh_use_pam(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030202 | SSH must use PAM."""
+    f = Finding("UBTU-18-030202", "SV-219219r853452_rule", "CAT III",
+                "Ubuntu 18.04 SSH must be configured to use PAM (UsePAM yes)",
+                fix="Set 'UsePAM yes' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run("grep -i '^UsePAM' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out or "yes" in out.lower():
+        f.status, f.detail = "PASS", "SSH UsePAM is enabled."
+    else:
+        f.status, f.detail = "FAIL", f"UsePAM is not enabled: {out.strip()}"
+    return f
+
+
+def check_030203_ssh_log_level(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030203 | SSH LogLevel must be INFO or VERBOSE."""
+    f = Finding("UBTU-18-030203", "SV-219220r853453_rule", "CAT III",
+                "Ubuntu 18.04 SSH must set LogLevel to INFO or VERBOSE",
+                fix="Set 'LogLevel VERBOSE' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run("grep -i '^LogLevel' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "PASS", "LogLevel not set (defaults to INFO)."
+    elif "INFO" in out.upper() or "VERBOSE" in out.upper():
+        f.status, f.detail = "PASS", f"SSH LogLevel: {out.strip()}"
+    else:
+        f.status, f.detail = "FAIL", f"SSH LogLevel is not INFO or VERBOSE: {out.strip()}"
+    return f
+
+
+def check_030300_passwd_sha512(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030300 | Passwords must be hashed with SHA-512."""
+    f = Finding("UBTU-18-030300", "SV-219221r853454_rule", "CAT III",
+                "Ubuntu 18.04 must use SHA-512 for password hashing",
+                fix="Set 'ENCRYPT_METHOD SHA512' in /etc/login.defs.")
+    rc, out, _ = exe.run("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "ENCRYPT_METHOD is not set."
+    elif "SHA512" in out.upper():
+        f.status, f.detail = "PASS", f"Password hashing: {out.strip()}"
+    else:
+        f.status, f.detail = "FAIL", f"Weak hashing: {out.strip()} (must be SHA512)."
+    return f
+
+
+def check_030301_pam_sha512(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030301 | PAM must use SHA-512 hashing."""
+    f = Finding("UBTU-18-030301", "SV-219222r853455_rule", "CAT III",
+                "Ubuntu 18.04 PAM must be configured to use SHA-512 hashing",
+                fix="Ensure pam_unix.so includes 'sha512' in /etc/pam.d/common-password.")
+    rc, out, _ = exe.run("grep -E 'pam_unix\\.so' /etc/pam.d/common-password 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "MANUAL", "pam_unix.so not found in /etc/pam.d/common-password."
+    elif "sha512" in out.lower():
+        f.status, f.detail = "PASS", f"PAM uses SHA-512: {out.strip()[:120]}"
+    else:
+        f.status, f.detail = "FAIL", f"PAM may lack sha512: {out.strip()[:120]}"
+    return f
+
+
+def check_030400_system_cmd_perms(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030400 | System commands must have mode 755 or less."""
+    f = Finding("UBTU-18-030400", "SV-219223r853456_rule", "CAT III",
+                "Ubuntu 18.04 system commands in /usr/bin and /usr/sbin must have mode 755 or less",
+                fix="sudo find /usr/bin /usr/sbin -perm /022 -exec chmod 755 {} \\;")
+    rc, out, _ = exe.run("find /usr/bin /usr/sbin -perm /022 -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "No system commands with excessive permissions."
+    else:
+        count_rc, count_out, _ = exe.run("find /usr/bin /usr/sbin -perm /022 -type f 2>/dev/null | wc -l")
+        f.status, f.detail = "FAIL", f"{count_out.strip()} command(s) with group/other write:\n{out[:400]}"
+    return f
+
+
+def check_030401_system_cmd_ownership(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030401 | System commands must be owned by root."""
+    f = Finding("UBTU-18-030401", "SV-219224r853457_rule", "CAT III",
+                "Ubuntu 18.04 system commands must be owned by root",
+                fix="sudo find /usr/bin /usr/sbin ! -user root -exec chown root {} \\;")
+    rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -user root -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "All system commands are owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Commands not owned by root:\n{out[:400]}"
+    return f
+
+
+def check_030402_system_cmd_group(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030402 | System commands must be group-owned by root."""
+    f = Finding("UBTU-18-030402", "SV-219225r853458_rule", "CAT III",
+                "Ubuntu 18.04 system commands must be group-owned by root",
+                fix="sudo find /usr/bin /usr/sbin ! -group root -exec chgrp root {} \\;")
+    rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -group root -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "All system commands are group-owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Commands not group-owned by root:\n{out[:400]}"
+    return f
+
+
+def check_030500_lib_perms(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030500 | Library files must have mode 755 or less."""
+    f = Finding("UBTU-18-030500", "SV-219226r853459_rule", "CAT III",
+                "Ubuntu 18.04 library files must have mode 755 or less",
+                fix="sudo find /lib /usr/lib -perm /022 -type f -exec chmod 755 {} \\;")
+    rc, out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "No library files with excessive permissions."
+    else:
+        count_rc, count_out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | wc -l")
+        f.status, f.detail = "FAIL", f"{count_out.strip()} library file(s) with group/other write:\n{out[:400]}"
+    return f
+
+
+def check_030501_lib_ownership(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030501 | Library files must be owned by root."""
+    f = Finding("UBTU-18-030501", "SV-219227r853460_rule", "CAT III",
+                "Ubuntu 18.04 library files must be owned by root",
+                fix="sudo find /lib /usr/lib ! -user root -type f -exec chown root {} \\;")
+    rc, out, _ = exe.run("find /lib /usr/lib ! -user root -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "All library files are owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Library files not owned by root:\n{out[:400]}"
+    return f
+
+
+def check_030502_lib_group(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030502 | Library files must be group-owned by root."""
+    f = Finding("UBTU-18-030502", "SV-219228r853461_rule", "CAT III",
+                "Ubuntu 18.04 library files must be group-owned by root",
+                fix="sudo find /lib /usr/lib ! -group root -type f -exec chgrp root {} \\;")
+    rc, out, _ = exe.run("find /lib /usr/lib ! -group root -type f 2>/dev/null | head -20")
+    if not out.strip():
+        f.status, f.detail = "PASS", "All library files are group-owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Library files not group-owned by root:\n{out[:400]}"
+    return f
+
+
+def check_030600_cron_dirs_restricted(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030600 | Cron directories must have mode 700 or less."""
+    f = Finding("UBTU-18-030600", "SV-219229r853462_rule", "CAT III",
+                "Ubuntu 18.04 cron directories must have mode 700 or more restrictive",
+                fix="sudo chmod 700 /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly")
+    dirs = ["/etc/cron.d", "/etc/cron.daily", "/etc/cron.hourly", "/etc/cron.monthly", "/etc/cron.weekly"]
+    bad = []
+    for d in dirs:
+        rc, out, _ = exe.run(f"stat -c '%a' {d} 2>/dev/null || echo 'MISSING'")
+        if "MISSING" not in out:
+            try:
+                mode = int(out.strip(), 8)
+                if mode > 0o700:
+                    bad.append(f"{d}={oct(mode)}")
+            except ValueError:
+                pass
+    if not bad:
+        f.status, f.detail = "PASS", "All cron directories have mode 700 or more restrictive."
+    else:
+        f.status, f.detail = "FAIL", f"Cron dirs with excessive permissions: {', '.join(bad)}"
+    return f
+
+
+def check_030601_crontab_restricted(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030601 | /etc/crontab must have mode 600 or less."""
+    f = Finding("UBTU-18-030601", "SV-219230r853463_rule", "CAT III",
+                "Ubuntu 18.04 /etc/crontab must have mode 600 or more restrictive",
+                fix="sudo chmod 600 /etc/crontab")
+    rc, out, _ = exe.run("stat -c '%a' /etc/crontab 2>/dev/null || echo 'NOT_FOUND'")
+    if "NOT_FOUND" in out:
+        f.status, f.detail = "PASS", "/etc/crontab does not exist."
+    else:
+        try:
+            mode = int(out.strip(), 8)
+            f.status = "PASS" if mode <= 0o600 else "FAIL"
+            f.detail = f"/etc/crontab mode: {oct(mode)}" + ("" if mode <= 0o600 else " (must be ≤ 0600)")
+        except ValueError:
+            f.status, f.detail = "MANUAL", f"Could not parse mode: {out}"
+    return f
+
+
+def check_030700_audit_tools_perms(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030700 | Audit tools must have mode 755 or less."""
+    f = Finding("UBTU-18-030700", "SV-219231r853464_rule", "CAT III",
+                "Ubuntu 18.04 audit tools must have mode 755 or less",
+                fix="sudo chmod 755 /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules")
+    tools = ["/usr/sbin/auditctl", "/usr/sbin/aureport", "/usr/sbin/ausearch",
+             "/usr/sbin/autrace", "/usr/sbin/auditd", "/usr/sbin/augenrules"]
+    bad = []
+    for t in tools:
+        rc, out, _ = exe.run(f"stat -c '%a' {t} 2>/dev/null")
+        if out.strip():
+            try:
+                mode = int(out.strip(), 8)
+                if mode > 0o755:
+                    bad.append(f"{t}={oct(mode)}")
+            except ValueError:
+                pass
+    if not bad:
+        f.status, f.detail = "PASS", "All audit tools have mode 755 or less."
+    else:
+        f.status, f.detail = "FAIL", f"Audit tools with excessive permissions: {', '.join(bad)}"
+    return f
+
+
+def check_030701_audit_tools_ownership(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030701 | Audit tools must be owned by root."""
+    f = Finding("UBTU-18-030701", "SV-219232r853465_rule", "CAT III",
+                "Ubuntu 18.04 audit tools must be owned by root",
+                fix="sudo chown root /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules")
+    tools = ["/usr/sbin/auditctl", "/usr/sbin/aureport", "/usr/sbin/ausearch",
+             "/usr/sbin/autrace", "/usr/sbin/auditd", "/usr/sbin/augenrules"]
+    bad = []
+    for t in tools:
+        rc, out, _ = exe.run(f"stat -c '%U' {t} 2>/dev/null")
+        if out.strip() and out.strip() != "root":
+            bad.append(f"{t} (owner={out.strip()})")
+    if not bad:
+        f.status, f.detail = "PASS", "All audit tools are owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Audit tools not owned by root: {', '.join(bad)}"
+    return f
+
+
+def check_030702_audit_tools_group(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030702 | Audit tools must be group-owned by root."""
+    f = Finding("UBTU-18-030702", "SV-219233r853466_rule", "CAT III",
+                "Ubuntu 18.04 audit tools must be group-owned by root",
+                fix="sudo chgrp root /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules")
+    tools = ["/usr/sbin/auditctl", "/usr/sbin/aureport", "/usr/sbin/ausearch",
+             "/usr/sbin/autrace", "/usr/sbin/auditd", "/usr/sbin/augenrules"]
+    bad = []
+    for t in tools:
+        rc, out, _ = exe.run(f"stat -c '%G' {t} 2>/dev/null")
+        if out.strip() and out.strip() != "root":
+            bad.append(f"{t} (group={out.strip()})")
+    if not bad:
+        f.status, f.detail = "PASS", "All audit tools are group-owned by root."
+    else:
+        f.status, f.detail = "FAIL", f"Audit tools not group-owned by root: {', '.join(bad)}"
+    return f
+
+
+def check_030800_home_dir_perms(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030800 | User home directories must have mode 750 or less."""
+    f = Finding("UBTU-18-030800", "SV-219234r853467_rule", "CAT III",
+                "Ubuntu 18.04 user home directories must have mode 0750 or less",
+                fix="sudo chmod 0750 /home/<user> for each offending directory.")
+    rc, out, _ = exe.run(
+        r"awk -F: '($3 >= 1000 && $7 !~ /nologin|false/) {print $6}' /etc/passwd 2>/dev/null"
+    )
+    if not out.strip():
+        f.status, f.detail = "PASS", "No interactive user home directories found."
+        return f
+    bad = []
+    for hdir in out.strip().splitlines():
+        hdir = hdir.strip()
+        if not hdir:
+            continue
+        rc2, mode_out, _ = exe.run(f"stat -c '%a' {hdir} 2>/dev/null")
+        if mode_out.strip():
+            try:
+                mode = int(mode_out.strip(), 8)
+                if mode > 0o750:
+                    bad.append(f"{hdir}={oct(mode)}")
+            except ValueError:
+                pass
+    if not bad:
+        f.status, f.detail = "PASS", "All home directories have mode 750 or less."
+    else:
+        f.status, f.detail = "FAIL", f"Home dirs with excessive permissions: {', '.join(bad)}"
+    return f
+
+
+def check_030801_home_dir_ownership(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030801 | Home directories must be owned by assigned user."""
+    f = Finding("UBTU-18-030801", "SV-219235r853468_rule", "CAT III",
+                "Ubuntu 18.04 home directories must be owned by their respective users",
+                fix="sudo chown <user>:<user> /home/<user> for each mismatched directory.")
+    rc, out, _ = exe.run(
+        r"awk -F: '($3 >= 1000 && $7 !~ /nologin|false/) {print $1,$6}' /etc/passwd 2>/dev/null"
+    )
+    if not out.strip():
+        f.status, f.detail = "PASS", "No interactive users found."
+        return f
+    bad = []
+    for line in out.strip().splitlines():
+        parts = line.strip().split()
+        if len(parts) < 2:
+            continue
+        user, hdir = parts[0], parts[1]
+        rc2, owner, _ = exe.run(f"stat -c '%U' {hdir} 2>/dev/null")
+        if owner.strip() and owner.strip() != user:
+            bad.append(f"{hdir} (expected={user}, actual={owner.strip()})")
+    if not bad:
+        f.status, f.detail = "PASS", "All home directories are correctly owned."
+    else:
+        f.status, f.detail = "FAIL", f"Mismatched ownership: {', '.join(bad)}"
+    return f
+
+
+def check_030900_no_duplicate_uids(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030900 | Must not have duplicate UIDs."""
+    f = Finding("UBTU-18-030900", "SV-219236r853469_rule", "CAT III",
+                "Ubuntu 18.04 must not contain duplicate UIDs",
+                fix="Correct duplicate UIDs in /etc/passwd.")
+    rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/passwd | sort | uniq -d 2>/dev/null")
+    if not out.strip():
+        f.status, f.detail = "PASS", "No duplicate UIDs found."
+    else:
+        f.status, f.detail = "FAIL", f"Duplicate UIDs: {out.strip()}"
+    return f
+
+
+def check_030901_no_duplicate_gids(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030901 | Must not have duplicate GIDs."""
+    f = Finding("UBTU-18-030901", "SV-219237r853470_rule", "CAT III",
+                "Ubuntu 18.04 must not contain duplicate GIDs",
+                fix="Correct duplicate GIDs in /etc/group.")
+    rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/group | sort | uniq -d 2>/dev/null")
+    if not out.strip():
+        f.status, f.detail = "PASS", "No duplicate GIDs found."
+    else:
+        f.status, f.detail = "FAIL", f"Duplicate GIDs: {out.strip()}"
+    return f
+
+
+def check_031000_no_world_writable(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031000 | Must not have world-writable files."""
+    f = Finding("UBTU-18-031000", "SV-219238r853471_rule", "CAT III",
+                "Ubuntu 18.04 must not have unnecessary world-writable files",
+                fix="sudo chmod o-w <file> for each world-writable file.")
+    rc, out, _ = exe.run(
+        "find / -xdev -type f -perm -0002 "
+        "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
+        "2>/dev/null | head -25"
+    )
+    if not out.strip():
+        f.status, f.detail = "PASS", "No world-writable files found."
+    else:
+        count_rc, count_out, _ = exe.run(
+            "find / -xdev -type f -perm -0002 "
+            "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
+            "2>/dev/null | wc -l"
+        )
+        f.status, f.detail = "FAIL", f"{count_out.strip()} world-writable file(s):\n{out[:500]}"
+    return f
+
+
+def check_031001_no_unowned_files(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031001 | Must not have unowned files."""
+    f = Finding("UBTU-18-031001", "SV-219239r853472_rule", "CAT III",
+                "Ubuntu 18.04 must not have files without a valid owner",
+                fix="sudo chown root <file> for each unowned file.")
+    rc, out, _ = exe.run(
+        "find / -xdev -nouser "
+        "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
+        "2>/dev/null | head -20"
+    )
+    if not out.strip():
+        f.status, f.detail = "PASS", "No unowned files found."
+    else:
+        f.status, f.detail = "FAIL", f"Unowned files:\n{out[:400]}"
+    return f
+
+
+def check_031002_no_ungrouped_files(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031002 | Must not have files without a valid group."""
+    f = Finding("UBTU-18-031002", "SV-219240r853473_rule", "CAT III",
+                "Ubuntu 18.04 must not have files without a valid group owner",
+                fix="sudo chgrp root <file> for each ungrouped file.")
+    rc, out, _ = exe.run(
+        "find / -xdev -nogroup "
+        "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
+        "2>/dev/null | head -20"
+    )
+    if not out.strip():
+        f.status, f.detail = "PASS", "No ungrouped files found."
+    else:
+        f.status, f.detail = "FAIL", f"Ungrouped files:\n{out[:400]}"
+    return f
+
+
+def check_031100_ntp_configured(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031100 | NTP must be configured."""
+    f = Finding("UBTU-18-031100", "SV-219241r853474_rule", "CAT III",
+                "Ubuntu 18.04 must synchronize clocks using an authoritative NTP source",
+                fix="Install and configure chrony or systemd-timesyncd.")
+    rc, out, _ = exe.run("timedatectl show --property=NTP --value 2>/dev/null || timedatectl status 2>/dev/null | grep NTP || echo 'UNKNOWN'")
+    rc2, out2, _ = exe.run("systemctl is-active chrony systemd-timesyncd ntp 2>/dev/null || echo 'INACTIVE'")
+    if "yes" in out.lower() or "active" in out2:
+        f.status, f.detail = "PASS", f"NTP synchronization is active. Services: {out2.strip()}"
+    else:
+        f.status, f.detail = "FAIL", f"NTP may not be configured. NTP={out.strip()}, services={out2.strip()}"
+    return f
+
+
+def check_031200_sudo_log(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031200 | sudo must log activity."""
+    f = Finding("UBTU-18-031200", "SV-219242r853475_rule", "CAT III",
+                "Ubuntu 18.04 must configure sudo to log all activity",
+                fix="Add 'Defaults logfile=\"/var/log/sudo.log\"' to /etc/sudoers via visudo.")
+    rc, out, _ = exe.run("sudo grep -rh 'Defaults.*logfile' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "sudo is not configured to log activity."
+    elif "logfile" in out.lower():
+        f.status, f.detail = "PASS", f"Sudo logging: {out.strip()[:120]}"
+    else:
+        f.status, f.detail = "FAIL", f"Unexpected: {out[:120]}"
+    return f
+
+
+def check_031201_sudo_timestamp_timeout(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031201 | sudo must require re-authentication."""
+    f = Finding("UBTU-18-031201", "SV-219243r853476_rule", "CAT III",
+                "Ubuntu 18.04 must enforce sudo timestamp_timeout",
+                fix="Add 'Defaults timestamp_timeout=0' to /etc/sudoers via visudo.")
+    rc, out, _ = exe.run("sudo grep -rh 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "timestamp_timeout not set (default 15 min cache)."
+    else:
+        match = re.search(r'timestamp_timeout\s*=\s*(-?\d+)', out)
+        if match:
+            val = int(match.group(1))
+            if val <= 0:
+                f.status, f.detail = "PASS", f"sudo timestamp_timeout={val} (re-auth every time)."
+            else:
+                f.status, f.detail = "FAIL", f"sudo timestamp_timeout={val} (should be 0)."
+        else:
+            f.status, f.detail = "MANUAL", f"Could not parse: {out[:120]}"
+    return f
+
+
+def check_031300_noexec_on_tmp(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031300 | /tmp must be mounted with noexec."""
+    f = Finding("UBTU-18-031300", "SV-219244r853477_rule", "CAT III",
+                "Ubuntu 18.04 /tmp must be mounted with noexec",
+                fix="Add 'noexec' to /tmp mount options in /etc/fstab.")
+    rc, out, _ = exe.run("mount | grep ' /tmp ' 2>/dev/null || echo 'NOT_MOUNTED'")
+    if "NOT_MOUNTED" in out:
+        f.status, f.detail = "MANUAL", "/tmp is not a separate mount point."
+    elif "noexec" in out:
+        f.status, f.detail = "PASS", "/tmp is mounted with noexec."
+    else:
+        f.status, f.detail = "FAIL", f"/tmp mounted WITHOUT noexec: {out.strip()[:150]}"
+    return f
+
+
+def check_031301_nosuid_on_tmp(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031301 | /tmp must be mounted with nosuid."""
+    f = Finding("UBTU-18-031301", "SV-219245r853478_rule", "CAT III",
+                "Ubuntu 18.04 /tmp must be mounted with nosuid",
+                fix="Add 'nosuid' to /tmp mount options in /etc/fstab.")
+    rc, out, _ = exe.run("mount | grep ' /tmp ' 2>/dev/null || echo 'NOT_MOUNTED'")
+    if "NOT_MOUNTED" in out:
+        f.status, f.detail = "MANUAL", "/tmp is not a separate mount point."
+    elif "nosuid" in out:
+        f.status, f.detail = "PASS", "/tmp is mounted with nosuid."
+    else:
+        f.status, f.detail = "FAIL", f"/tmp mounted WITHOUT nosuid: {out.strip()[:150]}"
+    return f
+
+
+def check_031400_postfix_local(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031400 | Mail must be local-only if Postfix installed."""
+    f = Finding("UBTU-18-031400", "SV-219246r853479_rule", "CAT III",
+                "Ubuntu 18.04 mail services (Postfix) must operate in local-only mode",
+                fix="Set 'inet_interfaces = loopback-only' in /etc/postfix/main.cf.")
+    rc, out, _ = exe.run("dpkg -l postfix 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+    if "NOT_INSTALLED" in out:
+        f.status, f.detail = "PASS", "Postfix is not installed."
+    else:
+        rc2, out2, _ = exe.run("postconf inet_interfaces 2>/dev/null || echo 'UNKNOWN'")
+        if "loopback-only" in out2 or "localhost" in out2:
+            f.status, f.detail = "PASS", f"Postfix is local-only: {out2.strip()}"
+        elif "UNKNOWN" in out2:
+            f.status, f.detail = "MANUAL", "Postfix installed but could not query inet_interfaces."
+        else:
+            f.status, f.detail = "FAIL", f"Postfix may listen on non-local: {out2.strip()}"
+    return f
+
+
+def check_031500_auto_updates(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031500 | Automatic security updates must be configured."""
+    f = Finding("UBTU-18-031500", "SV-219247r853480_rule", "CAT III",
+                "Ubuntu 18.04 must have automatic security updates configured",
+                fix="sudo apt install unattended-upgrades && sudo dpkg-reconfigure unattended-upgrades.")
+    rc, out, _ = exe.run("dpkg -l unattended-upgrades 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+    if "NOT_INSTALLED" in out:
+        f.status, f.detail = "FAIL", "unattended-upgrades is not installed."
+    else:
+        rc2, out2, _ = exe.run("grep -rhs 'APT::Periodic::Unattended-Upgrade' /etc/apt/apt.conf.d/ 2>/dev/null || echo 'NONE'")
+        if "1" in out2:
+            f.status, f.detail = "PASS", f"Automatic updates enabled: {out2.strip()[:120]}"
+        else:
+            f.status, f.detail = "FAIL", "unattended-upgrades installed but may not be enabled."
+    return f
+
+
+def check_031600_sudo_nopasswd(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031600 | NOPASSWD must not be used in sudoers."""
+    f = Finding("UBTU-18-031600", "SV-219248r853481_rule", "CAT III",
+                "Ubuntu 18.04 must not use NOPASSWD in sudoers",
+                fix="Remove NOPASSWD entries from /etc/sudoers and /etc/sudoers.d/.")
+    rc, out, _ = exe.run("sudo grep -rh 'NOPASSWD' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
+    if "NONE" in out or not out.strip():
+        f.status, f.detail = "PASS", "No NOPASSWD entries found."
+    else:
+        f.status, f.detail = "FAIL", f"NOPASSWD entries:\n{out[:300]}"
+    return f
+
+
+def check_031601_sudo_noexec(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031601 | Sudo should use NOEXEC where appropriate."""
+    f = Finding("UBTU-18-031601", "SV-219249r853482_rule", "CAT III",
+                "Ubuntu 18.04 sudo rules should use NOEXEC to restrict shell escapes",
+                fix="Add 'Defaults noexec' to /etc/sudoers or NOEXEC to individual rules.")
+    rc, out, _ = exe.run("sudo grep -rh 'NOEXEC\\|noexec' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
+    if "NONE" in out or not out.strip():
+        f.status, f.detail = "MANUAL", "No NOEXEC directives — review if shell escapes possible via sudo."
+    else:
+        f.status, f.detail = "PASS", f"NOEXEC configured: {out.strip()[:200]}"
+    return f
+
+
+def check_031700_tmux_installed(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-031700 | tmux must be installed for session locking."""
+    f = Finding("UBTU-18-031700", "SV-219250r853483_rule", "CAT III",
+                "Ubuntu 18.04 must have tmux or equivalent for session locking",
+                fix="sudo apt install tmux; configure in /etc/tmux.conf.")
+    rc, out, _ = exe.run("dpkg -l tmux 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+    if "NOT_INSTALLED" in out:
+        rc2, out2, _ = exe.run("dpkg -l vlock 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+        if "NOT_INSTALLED" in out2:
+            f.status, f.detail = "FAIL", "Neither tmux nor vlock is installed."
+        else:
+            f.status, f.detail = "PASS", "vlock is installed for session locking."
+    else:
+        f.status, f.detail = "PASS", "tmux is installed for session locking."
+    return f
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  CHECK REGISTRY
@@ -1072,10 +1768,50 @@ ALL_CHECKS = [
     check_v219330_no_unowned,
     check_v219340_ntp,
     check_v219350_usb_disabled,
+    # CAT III
+    check_030100_ssh_idle_timeout,
+    check_030101_ssh_alive_count,
+    check_030102_shell_timeout,
+    check_030200_ssh_x11_forwarding,
+    check_030201_ssh_user_env,
+    check_030202_ssh_use_pam,
+    check_030203_ssh_log_level,
+    check_030300_passwd_sha512,
+    check_030301_pam_sha512,
+    check_030400_system_cmd_perms,
+    check_030401_system_cmd_ownership,
+    check_030402_system_cmd_group,
+    check_030500_lib_perms,
+    check_030501_lib_ownership,
+    check_030502_lib_group,
+    check_030600_cron_dirs_restricted,
+    check_030601_crontab_restricted,
+    check_030700_audit_tools_perms,
+    check_030701_audit_tools_ownership,
+    check_030702_audit_tools_group,
+    check_030800_home_dir_perms,
+    check_030801_home_dir_ownership,
+    check_030900_no_duplicate_uids,
+    check_031000_no_world_writable,
+    check_031001_no_unowned_files,
+    check_031002_no_ungrouped_files,
+    check_031100_ntp_configured,
+    check_031200_sudo_log,
+    check_031201_sudo_timestamp_timeout,
+    check_031300_noexec_on_tmp,
+    check_031301_nosuid_on_tmp,
+    check_031400_postfix_local,
+    check_031500_auto_updates,
+    check_031600_sudo_nopasswd,
+    check_031601_sudo_noexec,
+    check_031700_tmux_installed,
+
+                                    
+
     # Versa-specific
     check_versa_services,
     check_versa_ports,
-    check_versa_tls,
+    check_versa_tls
 ]
 
 
