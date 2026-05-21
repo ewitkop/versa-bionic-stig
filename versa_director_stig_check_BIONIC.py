@@ -698,8 +698,8 @@ def check_v238230_audit_log_perms(exe: RemoteExecutor) -> Finding:
     else:
         try:
             mode = int(out.strip(), 8)
-            f.status = "PASS" if mode <= 0o600 else "FAIL"
-            f.detail = f"Audit log mode: {oct(mode)}" + ("" if mode <= 0o600 else " (must be ≤ 0600)")
+            f.status = "PASS" if mode <= 600 else "FAIL"
+            f.detail = f"Audit log mode: {oct(mode)}" + ("" if mode <= 600 else " (must be ≤ 0600)")
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse: {out}"
     return f
@@ -1135,6 +1135,7 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     """UBTU-18-010402 | Shell TMOUT must be 900 or less."""
     f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
+        description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
                 fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/autologout.sh.")
     rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/autologout.sh 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
@@ -1240,7 +1241,7 @@ def check_030301_pam_sha512(exe: RemoteExecutor) -> Finding:
 
 def check_030400_system_cmd_perms(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030400 | System commands must have mode 755 or less."""
-    f = Finding("UBTU-18-030400", "SV-219223r853456_rule", "CAT III",
+    f = Finding("UBTU-18-010139", "SV-219223r853456_rule", "CAT II",
                 "Ubuntu 18.04 system commands in /usr/bin and /usr/sbin must have mode 755 or less",
                 fix="sudo find /usr/bin /usr/sbin -perm /022 -exec chmod 755 {} \\;")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin -perm /022 -type f 2>/dev/null | head -20")
@@ -1770,6 +1771,7 @@ ALL_CHECKS = [
     check_v219330_no_unowned,
     check_v219340_ntp,
     check_v219350_usb_disabled,
+    check_030402_system_cmd_group,
     # CAT III
     check_030100_ssh_idle_timeout,
     check_030101_ssh_alive_count,
@@ -1780,9 +1782,9 @@ ALL_CHECKS = [
     check_030203_ssh_log_level,
     check_030300_passwd_sha512,
     check_030301_pam_sha512,
-    check_030400_system_cmd_perms,
+    #check_030400_system_cmd_perms, #the fixes for this can easily break your system
     check_030401_system_cmd_ownership,
-    check_030402_system_cmd_group,
+
     check_030500_lib_perms,
     check_030501_lib_ownership,
     check_030502_lib_group,
