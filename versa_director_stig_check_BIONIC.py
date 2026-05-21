@@ -1155,7 +1155,7 @@ def check_030200_ssh_x11_forwarding(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-030200", "SV-219217r853450_rule", "CAT III",
                 "Ubuntu 18.04 must not allow SSH X11 forwarding",
                 fix="Set 'X11Forwarding no' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run("grep -i '^X11Forwarding' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^X11Forwarding' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "X11Forwarding is not explicitly set (default may be yes)."
     elif "no" in out.lower():
@@ -1170,7 +1170,7 @@ def check_030201_ssh_user_env(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-030201", "SV-219218r853451_rule", "CAT III",
                 "Ubuntu 18.04 SSH must not allow PermitUserEnvironment",
                 fix="Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out or "no" in out.lower():
         f.status, f.detail = "PASS", "PermitUserEnvironment is disabled."
     else:
@@ -1183,7 +1183,7 @@ def check_030202_ssh_use_pam(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-030202", "SV-219219r853452_rule", "CAT III",
                 "Ubuntu 18.04 SSH must be configured to use PAM (UsePAM yes)",
                 fix="Set 'UsePAM yes' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run("grep -i '^UsePAM' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^UsePAM' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out or "yes" in out.lower():
         f.status, f.detail = "PASS", "SSH UsePAM is enabled."
     else:
@@ -1196,7 +1196,7 @@ def check_030203_ssh_log_level(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-030203", "SV-219220r853453_rule", "CAT III",
                 "Ubuntu 18.04 SSH must set LogLevel to INFO or VERBOSE",
                 fix="Set 'LogLevel VERBOSE' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run("grep -i '^LogLevel' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^LogLevel' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "PASS", "LogLevel not set (defaults to INFO)."
     elif "INFO" in out.upper() or "VERBOSE" in out.upper():
@@ -1211,7 +1211,7 @@ def check_030300_passwd_sha512(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-030300", "SV-219221r853454_rule", "CAT III",
                 "Ubuntu 18.04 must use SHA-512 for password hashing",
                 fix="Set 'ENCRYPT_METHOD SHA512' in /etc/login.defs.")
-    rc, out, _ = exe.run("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "ENCRYPT_METHOD is not set."
     elif "SHA512" in out.upper():
@@ -2072,6 +2072,8 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
   <button class="filter-btn" data-filter="manual">Manual ({totals['MANUAL']})</button>
   <button class="filter-btn" data-filter="error">Error ({totals['ERROR']})</button>
   <button class="filter-btn" data-filter="cati">CAT I Only</button>
+  <button class="filter-btn" data-filter="catii">CAT II Only</button>
+  <button class="filter-btn" data-filter="catiii">CAT III Only</button>
 </div>
 
 <!-- Findings -->
@@ -2095,6 +2097,14 @@ document.querySelectorAll('.filter-btn').forEach(btn => {{
       if (f === 'all') {{ el.style.display = ''; return; }}
       if (f === 'cati') {{
         el.style.display = el.querySelector('.sev-badge.cati') ? '' : 'none';
+        return;
+      }}
+      if (f === 'catii') {{
+        el.style.display = el.querySelector('.sev-badge.catii') ? '' : 'none';
+        return;
+      }}
+       if (f === 'catiii') {{
+        el.style.display = el.querySelector('.sev-badge.catiii') ? '' : 'none';
         return;
       }}
       el.style.display = el.classList.contains(f) ? '' : 'none';
