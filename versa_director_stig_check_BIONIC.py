@@ -1115,6 +1115,8 @@ def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030101 | SSH ClientAliveCountMax must be 1."""
     f = Finding("UBTU-18-030101", "SV-219215r853448_rule", "CAT III",
                 "Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1",
+        description="Txxx",
+        check_method="Sexxxx",
                 fix="Set 'ClientAliveCountMax 1' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
