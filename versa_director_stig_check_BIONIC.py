@@ -1113,10 +1113,10 @@ def check_030100_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
 
 def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030101 | SSH ClientAliveCountMax must be 1."""
-    f = Finding("UBTU-18-030101", "SV-219215r853448_rule", "CAT III",
+    f = Finding("UBTU-18-010415", "SV-219215r853448_rule", "CAT III",
                 "Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1",
-        description="Txxx",
-        check_method="Sexxxx",
+        description="The Ubuntu operating system must immediately terminate all network connections associated with SSH traffic after a period of inactivity",
+        check_method="grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config",
                 fix="Set 'ClientAliveCountMax 1' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
@@ -1132,18 +1132,18 @@ def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
 
 
 def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030102 | Shell TMOUT must be 600 or less."""
-    f = Finding("UBTU-18-030102", "SV-219216r853449_rule", "CAT III",
-                "Ubuntu 18.04 must set a session timeout of 600 seconds or less (TMOUT)",
-                fix="Add 'TMOUT=600' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/tmout.sh.")
-    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile /etc/profile.d/ /etc/bash.bashrc 2>/dev/null || echo 'NOT_SET'")
+    """UBTU-18-010402 | Shell TMOUT must be 900 or less."""
+    f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
+                "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
+                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/autologout.sh.")
+    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/autologout.sh 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "TMOUT is not configured."
     else:
         match = re.search(r'TMOUT\s*=\s*(\d+)', out)
         if match:
             val = int(match.group(1))
-            if 1 <= val <= 600:
+            if 1 <= val <= 900:
                 f.status, f.detail = "PASS", f"TMOUT is set to {val} seconds."
             else:
                 f.status, f.detail = "FAIL", f"TMOUT is {val} (must be ≤ 600 and > 0)."
