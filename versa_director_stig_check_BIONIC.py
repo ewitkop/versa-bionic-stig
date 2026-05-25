@@ -628,10 +628,9 @@ def check_v219174_account_lockout(exe: RemoteExecutor) -> Finding:
         description="Account lockout mitigates brute-force attacks against user credentials.",
         check_method="Searched /etc/pam.d/common-auth for pam_tally2 or pam_faillock with "
                      "'deny=N' and verified N <= 3.",
-        fix="1. Edit /etc/pam.d/common-auth\n"
-            "2. Add before pam_unix:  auth required pam_tally2.so deny=3 onerr=fail "
-            "unlock_time=900 audit\n"
-            "3. Also add to /etc/pam.d/common-account:  account required pam_tally2.so")
+        fix="1. Edit /etc/security/faillock\n"
+            "2. Uncomment 'deny=3', add 'unlock_time=900' and 'fail_interval = 900\n'")
+            
     rc, out, _ = exe.run("grep -E 'pam_tally2|pam_faillock' /etc/pam.d/common-auth 2>/dev/null")
     f.evidence = out
     match = re.search(r'deny=(\d+)', out)
@@ -1771,11 +1770,12 @@ ALL_CHECKS = [
     check_v219330_no_unowned,
     check_v219340_ntp,
     check_v219350_usb_disabled,
+    check_030102_shell_timeout,
     check_030402_system_cmd_group,
     # CAT III
     check_030100_ssh_idle_timeout,
     check_030101_ssh_alive_count,
-    check_030102_shell_timeout,
+   
     check_030200_ssh_x11_forwarding,
     check_030201_ssh_user_env,
     check_030202_ssh_use_pam,
