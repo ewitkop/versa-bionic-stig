@@ -876,11 +876,11 @@ def check_v219270_syslog_remote(exe: RemoteExecutor) -> Finding:
         "V-219270", "SV-219270r879799_rule", "CAT II",
         "System logs must be forwarded to a centralized remote syslog server",
         description="Remote logging ensures logs survive if the local system is compromised.",
-        check_method="Searched /etc/rsyslog.d/*.conf for forwarding "
+        check_method="Searched /var/versa/vnms/data/conf/99-versa.conf for forwarding "
                      "rules (lines containing @ or @@).",
         fix="1. Go to your Director GUI and proceed to Administration -> Connectors -> then SYSLOG \n")
            
-    rc, out, _ = exe.run("grep -rE '.*@{1,2}'  /etc/rsyslog.d/*.conf 2>/dev/null || echo 'NOT_FOUND'")
+    rc, out, _ = exe.run("grep -rE '.*@{1,2}'  /var/versa/vnms/data/conf/99-versa.conf 2>/dev/null || echo 'NOT_FOUND'")
     f.evidence = out
     if "NOT_FOUND" in out or not out.strip():
         f.status, f.detail = "FAIL", "No remote syslog forwarding configured."
@@ -1134,7 +1134,7 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
-                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh.")
+                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
     rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-timeout.sh 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "TMOUT is not configured."
