@@ -1134,8 +1134,8 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
-                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/autologout.sh.")
-    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/autologout.sh 2>/dev/null || echo 'NOT_SET'")
+                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh.")
+    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-timeout.sh 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "TMOUT is not configured."
     else:
