@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>STIG Compliance Report — Director-217 — 2026-05-26</title>
+<title>STIG Compliance Report — Director-217 — 2026-05-27</title>
 <style>
 :root {
   --pass: #22c55e; --fail: #ef4444; --manual: #f59e0b;
@@ -129,31 +129,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <span><strong>Host:</strong> 10.73.108.217</span>
     <span><strong>Hostname:</strong> Director-217</span>
     <span><strong>OS:</strong> NAME=&quot;Ubuntu&quot;</span>
-    <span><strong>Scan Time:</strong> 2026-05-26T13:42:05.382124+00:00</span>
+    <span><strong>Scan Time:</strong> 2026-05-27T04:13:33.587593+00:00</span>
     <span><strong>Benchmark:</strong> DISA Ubuntu 18.04 LTS STIG V2R13+</span>
   </div>
 </div>
 
 <!-- Summary Cards -->
 <div class="summary">
-  <div class="summary-card pass"><div class="num">57</div><div class="label">Pass</div></div>
-  <div class="summary-card fail"><div class="num">13</div><div class="label">Fail</div></div>
+  <div class="summary-card pass"><div class="num">56</div><div class="label">Pass</div></div>
+  <div class="summary-card fail"><div class="num">14</div><div class="label">Fail</div></div>
   <div class="summary-card manual"><div class="num">6</div><div class="label">Manual</div></div>
   <div class="summary-card error"><div class="num">0</div><div class="label">Error</div></div>
   <div class="summary-card"><div class="num">76</div><div class="label">Total Checks</div></div>
-  <div class="summary-card pass"><div class="num">75.0%</div><div class="label">Compliance</div></div>
+  <div class="summary-card pass"><div class="num">73.7%</div><div class="label">Compliance</div></div>
 </div>
 
 <!-- Score Bar -->
 <div class="score-section">
   <div class="score-bar">
-    <div class="seg pass" style="width:75.0%"></div>
-    <div class="seg fail" style="width:17.1%"></div>
+    <div class="seg pass" style="width:73.7%"></div>
+    <div class="seg fail" style="width:18.4%"></div>
     <div class="seg manual" style="width:7.9%"></div>
     <div class="seg error" style="width:0.0%"></div>
   </div>
   <div class="score-label">
-    57 passed &middot; 13 failed &middot; 6 manual review &middot; 0 errors
+    56 passed &middot; 14 failed &middot; 6 manual review &middot; 0 errors
   </div>
 </div>
 
@@ -161,15 +161,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <table class="sev-table">
   <tr><th>Severity</th><th style="color:var(--pass)">Pass</th><th style="color:var(--fail)">Fail</th><th style="color:var(--manual)">Manual</th><th style="color:var(--error)">Error</th></tr>
   <tr><td><span class="sev-badge cati">CAT I</span></td><td>7</td><td>0</td><td>0</td><td>0</td></tr>
-  <tr><td><span class="sev-badge catii">CAT II</span></td><td>30</td><td>2</td><td>3</td><td>0</td></tr>
-  <tr><td><span class="sev-badge catiii">CAT III</span></td><td>20</td><td>11</td><td>3</td><td>0</td></tr>
+  <tr><td><span class="sev-badge catii">CAT II</span></td><td>31</td><td>1</td><td>3</td><td>0</td></tr>
+  <tr><td><span class="sev-badge catiii">CAT III</span></td><td>18</td><td>13</td><td>3</td><td>0</td></tr>
 </table>
 
 <!-- Filters -->
 <div class="filter-bar">
   <button class="filter-btn active" data-filter="all">All (76)</button>
-  <button class="filter-btn" data-filter="fail">Fail (13)</button>
-  <button class="filter-btn" data-filter="pass">Pass (57)</button>
+  <button class="filter-btn" data-filter="fail">Fail (14)</button>
+  <button class="filter-btn" data-filter="pass">Pass (56)</button>
   <button class="filter-btn" data-filter="manual">Manual (6)</button>
   <button class="filter-btn" data-filter="error">Error (0)</button>
   <button class="filter-btn" data-filter="cati">CAT I Only</button>
@@ -395,10 +395,10 @@ Protocol 2</pre></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219155r879597_rule</td></tr>
-              <tr><th>Result</th><td><strong>ClientAliveCountMax = 1</strong></td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveCountMax = 0</strong></td></tr>
               <tr><th>Description</th><td>Combined with ClientAliveInterval, this ensures the session is terminated promptly after the interval expires without a response.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;ClientAliveCountMax&#x27;. Must be &lt;= 1.</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">ClientAliveCountMax 1</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ClientAliveCountMax 0</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  ClientAliveCountMax 1<br>3. sudo systemctl restart sshd</td></tr>
             </table>
           </div>
@@ -831,9 +831,9 @@ x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219270</span>
             <span class="finding-title">System logs must be forwarded to a centralized remote syslog server</span>
@@ -842,10 +842,10 @@ x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219270r879799_rule</td></tr>
-              <tr><th>Result</th><td><strong>No remote syslog forwarding configured.</strong></td></tr>
+              <tr><th>Result</th><td><strong>Remote syslog forwarding is configured.</strong></td></tr>
               <tr><th>Description</th><td>Remote logging ensures logs survive if the local system is compromised.</td></tr>
-              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/rsyslog.d/*.conf for forwarding rules (lines containing @ or @@).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_FOUND</pre></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /var/versa/vnms/data/conf/99-versa.conf for forwarding rules (lines containing @ or @@).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">local7.*   @10.73.108.218:514</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Go to your Director GUI and proceed to Administration -&gt; Connectors -&gt; then SYSLOG <br></td></tr>
             </table>
           </div>
@@ -871,9 +871,9 @@ x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_
           </div>
         </div>
 
-        <div class="finding pass">
+        <div class="finding fail">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge pass">PASS</span>
+            <span class="badge fail">FAIL</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219320</span>
             <span class="finding-title">There must be no world-writable files on the system</span>
@@ -882,10 +882,10 @@ x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219320r879899_rule</td></tr>
-              <tr><th>Result</th><td><strong>No world-writable files found.</strong></td></tr>
+              <tr><th>Result</th><td><strong>Found 1 world-writable file(s).</strong></td></tr>
               <tr><th>Description</th><td>World-writable files can be modified by any user, leading to privilege escalation.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;find / -xdev -type f -perm -0002&#x27; excluding /proc, /sys, /run and listed up to 20 results.</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">(none found)</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/var/log/vnms/ipam/netbox.log</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">For each file found:<br>  sudo chmod o-w &lt;filepath&gt;<br>Investigate why the file was world-writable.</td></tr>
             </table>
           </div>
@@ -956,9 +956,9 @@ lsmod: NOT_LOADED</pre></td></tr>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">UBTU-18-010402</span>
             <span class="finding-title">Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)</span>
@@ -967,11 +967,11 @@ lsmod: NOT_LOADED</pre></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219216r853449_rule</td></tr>
-              <tr><th>Result</th><td><strong>TMOUT is not configured.</strong></td></tr>
+              <tr><th>Result</th><td><strong>TMOUT is set to 900 seconds.</strong></td></tr>
               <tr><th>Description</th><td>The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
-              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;TMOUT=900&#x27; and &#x27;readonly TMOUT; export TMOUT&#x27; to /etc/profile.d/autologout.sh.</td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;TMOUT=900&#x27; and &#x27;readonly TMOUT; export TMOUT&#x27; to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.</td></tr>
             </table>
           </div>
         </div>
@@ -1036,9 +1036,9 @@ lsmod: NOT_LOADED</pre></td></tr>
           </div>
         </div>
 
-        <div class="finding pass">
+        <div class="finding fail">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge pass">PASS</span>
+            <span class="badge fail">FAIL</span>
             <span class="sev-badge catiii">CAT III</span>
             <span class="vuln-id">UBTU-18-010415</span>
             <span class="finding-title">Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1</span>
@@ -1047,7 +1047,7 @@ lsmod: NOT_LOADED</pre></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219215r853448_rule</td></tr>
-              <tr><th>Result</th><td><strong>ClientAliveCountMax is 1.</strong></td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveCountMax is 0 (must be 1).</strong></td></tr>
               <tr><th>Description</th><td>The Ubuntu operating system must immediately terminate all network connections associated with SSH traffic after a period of inactivity</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">grep -i &#x27;^ClientAliveCountMax&#x27; /etc/ssh/sshd_config</td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
@@ -1443,9 +1443,9 @@ lsmod: NOT_LOADED</pre></td></tr>
           </div>
         </div>
 
-        <div class="finding pass">
+        <div class="finding fail">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge pass">PASS</span>
+            <span class="badge fail">FAIL</span>
             <span class="sev-badge catiii">CAT III</span>
             <span class="vuln-id">UBTU-18-031000</span>
             <span class="finding-title">Ubuntu 18.04 must not have unnecessary world-writable files</span>
@@ -1454,7 +1454,8 @@ lsmod: NOT_LOADED</pre></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219238r853471_rule</td></tr>
-              <tr><th>Result</th><td><strong>No world-writable files found.</strong></td></tr>
+              <tr><th>Result</th><td><strong>1 world-writable file(s):
+/var/log/vnms/ipam/netbox.log</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
@@ -1746,7 +1747,6 @@ versa-websockify.service   loaded active running Websockify</pre></td></tr>
               <tr><th>Description</th><td>Unnecessary listening services expand the attack surface.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;ss -tlnp&#x27; to list all TCP listening sockets with process info.</td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence">State    Recv-Q    Send-Q        Local Address:Port        Peer Address:Port    
-LISTEN   0         100               127.0.0.1:8080             0.0.0.0:*       
 LISTEN   0         128               127.0.0.1:4949             0.0.0.0:*       
 LISTEN   0         128                 0.0.0.0:22               0.0.0.0:*       
 LISTEN   0         25                  0.0.0.0:4566             0.0.0.0:*       
@@ -1764,6 +1764,7 @@ LISTEN   0         25                127.0.0.1:514              0.0.0.0:*
 LISTEN   0         64                127.0.0.1:2024             0.0.0.0:*       
 LISTEN   0         128               127.0.0.1:4200             0.0.0.0:*       
 LISTEN   0         511               127.0.0.1:6379             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:8080             0.0.0.0:*       
 LISTEN   0         128                    [::]:22                  [::]:*       
 LISTEN   0         1054                   [::]:5432                [::]:*       
 LISTEN   0         100                    [::]:25                  [::]:*</pre></td></tr>
@@ -1804,7 +1805,7 @@ Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/vers
 
 <!-- Footer -->
 <div class="report-footer">
-  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-26T13:42:05.382124+00:00
+  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-27T04:13:33.587593+00:00
 </div>
 
 <script>

@@ -2176,7 +2176,7 @@ Examples:
     print_console_summary(report)
 
     # Save HTML
-    out_path = args.output or f"versa_stig_u18_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    out_path = args.output or f"versa_Director_stig_u18_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
     html_content = generate_html_report(report)
     with open(out_path, "w", encoding="utf-8") as fp:
         fp.write(html_content)
