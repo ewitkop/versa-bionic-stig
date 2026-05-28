@@ -1158,6 +1158,7 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
                 fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
     rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-timeout.sh 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "TMOUT is not configured."
     else:
@@ -1179,6 +1180,7 @@ def check_030200_ssh_x11_forwarding(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must not allow SSH X11 forwarding",
                 fix="Set 'X11Forwarding no' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^X11Forwarding' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "X11Forwarding is not explicitly set (default may be yes)."
     elif "no" in out.lower():
@@ -1194,6 +1196,7 @@ def check_030201_ssh_user_env(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 SSH must not allow PermitUserEnvironment",
                 fix="Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out or "no" in out.lower():
         f.status, f.detail = "PASS", "PermitUserEnvironment is disabled."
     else:
@@ -1207,6 +1210,7 @@ def check_030202_ssh_use_pam(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 SSH must be configured to use PAM (UsePAM yes)",
                 fix="Set 'UsePAM yes' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^UsePAM' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out or "yes" in out.lower():
         f.status, f.detail = "PASS", "SSH UsePAM is enabled."
     else:
