@@ -1666,7 +1666,7 @@ def check_031500_auto_updates(exe: RemoteExecutor) -> Finding:
     """UBTU-18-031500 | Automatic security updates must be configured."""
     f = Finding("UBTU-18-031500", "SV-219247r853480_rule", "CAT III",
                 "Ubuntu 18.04 must have automatic security updates configured",
-                fix="sudo apt install unattended-upgrades && sudo dpkg-reconfigure unattended-upgrades.")
+                fix="POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks files that are tested and approved.")
     rc, out, _ = exe.run_sudo("dpkg -l unattended-upgrades 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
     if "NOT_INSTALLED" in out:
         f.status, f.detail = "FAIL", "unattended-upgrades is not installed."
