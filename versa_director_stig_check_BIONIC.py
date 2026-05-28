@@ -383,9 +383,8 @@ def check_v219155_ssh_alive_count(exe: RemoteExecutor) -> Finding:
         description="Combined with ClientAliveInterval, this ensures the session is terminated "
                     "promptly after the interval expires without a response.",
         check_method="Searched /etc/ssh/sshd_config for 'ClientAliveCountMax'. Must be <= 1.",
-        fix="1. Edit /etc/ssh/sshd_config\n"
-            "2. Set:  ClientAliveCountMax 1\n"
-            "3. sudo systemctl restart sshd")
+        fix="1. In Director CLI, 'set system settings ssh client-alive-count-max 1' "
+            "2. Then type 'commit'\n")
     rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
@@ -908,6 +907,34 @@ def check_v219290_no_games(exe: RemoteExecutor) -> Finding:
     return f
 
 
+
+
+
+def check_v219350_usb_disabled(exe: RemoteExecutor) -> Finding:
+    """V-219350 | USB mass storage must be disabled."""
+    f = Finding(
+        "V-219350", "SV-219350r879959_rule", "CAT II",
+        "USB mass storage kernel module must be disabled",
+        description="USB storage devices can be used to exfiltrate data or introduce malware.",
+        check_method="1. Searched /etc/modprobe.d/ for 'install usb-storage /bin/true'.\n"
+                     "2. Checked 'lsmod' to see if usb_storage is currently loaded.",
+        fix="1. echo 'install usb-storage /bin/true' | sudo tee /etc/modprobe.d/disable-usb-storage.conf\n"
+            "2. echo 'blacklist usb-storage' | sudo tee -a /etc/modprobe.d/blacklist.conf\n"
+            "3. If module is loaded:  sudo modprobe -r usb_storage")
+    rc, out, _ = exe.run("grep -rE 'install\\s+usb-storage' /etc/modprobe.d/ 2>/dev/null || echo 'NOT_SET'")
+    rc2, out2, _ = exe.run("lsmod | grep usb_storage 2>/dev/null || echo 'NOT_LOADED'")
+    f.evidence = f"modprobe config: {out}\nlsmod: {out2}"
+    if "/bin/true" in out or "/bin/false" in out:
+        f.status, f.detail = "PASS", "USB storage module is disabled in modprobe."
+    elif "NOT_SET" in out and "NOT_LOADED" not in out2:
+        f.status, f.detail = "FAIL", "USB storage module is loaded and not blacklisted."
+    else:
+        f.status, f.detail = "FAIL", "USB storage not disabled in modprobe config."
+    return f
+# ---------------------------------------------------------------------------
+#  NTP
+# ---------------------------------------------------------------------------
+
 def check_v219340_ntp(exe: RemoteExecutor) -> Finding:
     """V-219340 | Time synchronization must be configured."""
     f = Finding(
@@ -932,29 +959,24 @@ def check_v219340_ntp(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "FAIL", "No time synchronization service is running."
     return f
 
-
-def check_v219350_usb_disabled(exe: RemoteExecutor) -> Finding:
-    """V-219350 | USB mass storage must be disabled."""
+def check_v219331_ntp(exe: RemoteExecutor) -> Finding:
+    """V-219331 | Must have NTP server."""
     f = Finding(
-        "V-219350", "SV-219350r879959_rule", "CAT II",
-        "USB mass storage kernel module must be disabled",
-        description="USB storage devices can be used to exfiltrate data or introduce malware.",
-        check_method="1. Searched /etc/modprobe.d/ for 'install usb-storage /bin/true'.\n"
-                     "2. Checked 'lsmod' to see if usb_storage is currently loaded.",
-        fix="1. echo 'install usb-storage /bin/true' | sudo tee /etc/modprobe.d/disable-usb-storage.conf\n"
-            "2. echo 'blacklist usb-storage' | sudo tee -a /etc/modprobe.d/blacklist.conf\n"
-            "3. If module is loaded:  sudo modprobe -r usb_storage")
-    rc, out, _ = exe.run("grep -rE 'install\\s+usb-storage' /etc/modprobe.d/ 2>/dev/null || echo 'NOT_SET'")
-    rc2, out2, _ = exe.run("lsmod | grep usb_storage 2>/dev/null || echo 'NOT_LOADED'")
-    f.evidence = f"modprobe config: {out}\nlsmod: {out2}"
-    if "/bin/true" in out or "/bin/false" in out:
-        f.status, f.detail = "PASS", "USB storage module is disabled in modprobe."
-    elif "NOT_SET" in out and "NOT_LOADED" not in out2:
-        f.status, f.detail = "FAIL", "USB storage module is loaded and not blacklisted."
+        "V-219331", "SV-219331_r879959_rule", "CAT II",
+        "Must have an NTP server",
+        description="DISA requires NTP with iburst and it must check every 24 hours.",
+        check_method="1. Searched '/etc/ntp/ntp.servers' for a server value.\n",
+        fix="1. Login into Director GUI.\n"
+            "2. Browse to Administration -> System -> NTP -> Server\n"
+            "3. Enter a FQDN for an authoritative NTP server with key.")
+    rc, out, _ = exe.run("grep -rE 'server' /etc/ntp/ntp.servers 2>/dev/null || echo 'NOT_SET'")
+  
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "No NTP server found."
     else:
-        f.status, f.detail = "FAIL", "USB storage not disabled in modprobe config."
+        f.status, f.detail = "PASS", "An NTP server was found in /etc/ntp/ntp/servers."
     return f
-
 
 # ---------------------------------------------------------------------------
 #  VERSA-SPECIFIC
@@ -1768,6 +1790,7 @@ ALL_CHECKS = [
     check_v219320_no_world_writable,
     check_v219330_no_unowned,
     check_v219340_ntp,
+    check_v219331_ntp,
     check_v219350_usb_disabled,
     check_030102_shell_timeout,
     check_030402_system_cmd_group,
