@@ -795,7 +795,7 @@ def check_v219320_no_world_writable(exe: RemoteExecutor) -> Finding:
                      "and listed up to 20 results.",
         fix="For each file found:\n  sudo chmod o-w <filepath>\n"
             "Investigate why the file was world-writable.")
-    rc, out, _ = exe.run(
+    rc, out, _ = exe.run_sudo(
         "find / -xdev -type f -perm -0002 -not -path '/proc/*' -not -path '/sys/*' "
         "-not -path '/run/*' 2>/dev/null | head -20")
     f.evidence = out if out else "(none found)"
@@ -939,7 +939,7 @@ def check_v219340_ntp(exe: RemoteExecutor) -> Finding:
     """V-219340 | Time synchronization must be configured."""
     f = Finding(
         "V-219340", "SV-219340r879939_rule", "CAT II",
-        "Time synchronization (NTP/chrony/timesyncd) must be configured and active",
+        "Time synchronization service (NTP/chrony/timesyncd) must be configured and active",
         description="Accurate time is critical for audit log correlation and authentication protocols.",
         check_method="Checked systemctl is-active for chrony, ntp, and systemd-timesyncd.",
         fix="1. Install chrony:  sudo apt install chrony\n"
@@ -960,7 +960,7 @@ def check_v219340_ntp(exe: RemoteExecutor) -> Finding:
     return f
 
 def check_v219331_ntp(exe: RemoteExecutor) -> Finding:
-    """V-219331 | Must have NTP server."""
+    """V-219331 | Must have NTP server configured."""
     f = Finding(
         "V-219331", "SV-219331_r879959_rule", "CAT II",
         "Must have an NTP server",
@@ -1526,26 +1526,7 @@ def check_030901_no_duplicate_gids(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_031000_no_world_writable(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-031000 | Must not have world-writable files."""
-    f = Finding("UBTU-18-031000", "SV-219238r853471_rule", "CAT III",
-                "Ubuntu 18.04 must not have unnecessary world-writable files",
-                fix="sudo chmod o-w <file> for each world-writable file.")
-    rc, out, _ = exe.run(
-        "find / -xdev -type f -perm -0002 "
-        "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
-        "2>/dev/null | head -25"
-    )
-    if not out.strip():
-        f.status, f.detail = "PASS", "No world-writable files found."
-    else:
-        count_rc, count_out, _ = exe.run(
-            "find / -xdev -type f -perm -0002 "
-            "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
-            "2>/dev/null | wc -l"
-        )
-        f.status, f.detail = "FAIL", f"{count_out.strip()} world-writable file(s):\n{out[:500]}"
-    return f
+
 
 
 def check_031001_no_unowned_files(exe: RemoteExecutor) -> Finding:
@@ -1616,7 +1597,7 @@ def check_031201_sudo_timestamp_timeout(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-031201", "SV-219243r853476_rule", "CAT III",
                 "Ubuntu 18.04 must enforce sudo timestamp_timeout",
                 fix="Add 'Defaults timestamp_timeout=0' to /etc/sudoers via visudo.")
-    rc, out, _ = exe.run("sudo grep -rh 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -rh 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "timestamp_timeout not set (default 15 min cache)."
     else:
@@ -1703,7 +1684,7 @@ def check_031600_sudo_nopasswd(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-031600", "SV-219248r853481_rule", "CAT III",
                 "Ubuntu 18.04 must not use NOPASSWD in sudoers",
                 fix="Remove NOPASSWD entries from /etc/sudoers and /etc/sudoers.d/.")
-    rc, out, _ = exe.run("sudo grep -rh 'NOPASSWD' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
+    rc, out, _ = exe.run_sudo("grep -rh 'NOPASSWD' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
     if "NONE" in out or not out.strip():
         f.status, f.detail = "PASS", "No NOPASSWD entries found."
     else:
@@ -1818,7 +1799,6 @@ ALL_CHECKS = [
     check_030800_home_dir_perms,
     check_030801_home_dir_ownership,
     check_030900_no_duplicate_uids,
-    check_031000_no_world_writable,
     check_031001_no_unowned_files,
     check_031002_no_ungrouped_files,
     check_031100_ntp_configured,

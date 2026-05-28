@@ -129,31 +129,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <span><strong>Host:</strong> 10.73.108.217</span>
     <span><strong>Hostname:</strong> Director-217</span>
     <span><strong>OS:</strong> NAME=&quot;Ubuntu&quot;</span>
-    <span><strong>Scan Time:</strong> 2026-05-28T01:02:39.208873+00:00</span>
+    <span><strong>Scan Time:</strong> 2026-05-28T02:30:50.302589+00:00</span>
     <span><strong>Benchmark:</strong> DISA Ubuntu 18.04 LTS STIG V2R13+</span>
   </div>
 </div>
 
 <!-- Summary Cards -->
 <div class="summary">
-  <div class="summary-card pass"><div class="num">53</div><div class="label">Pass</div></div>
-  <div class="summary-card fail"><div class="num">18</div><div class="label">Fail</div></div>
+  <div class="summary-card pass"><div class="num">58</div><div class="label">Pass</div></div>
+  <div class="summary-card fail"><div class="num">13</div><div class="label">Fail</div></div>
   <div class="summary-card manual"><div class="num">6</div><div class="label">Manual</div></div>
   <div class="summary-card error"><div class="num">0</div><div class="label">Error</div></div>
   <div class="summary-card"><div class="num">77</div><div class="label">Total Checks</div></div>
-  <div class="summary-card pass"><div class="num">68.8%</div><div class="label">Compliance</div></div>
+  <div class="summary-card pass"><div class="num">75.3%</div><div class="label">Compliance</div></div>
 </div>
 
 <!-- Score Bar -->
 <div class="score-section">
   <div class="score-bar">
-    <div class="seg pass" style="width:68.8%"></div>
-    <div class="seg fail" style="width:23.4%"></div>
+    <div class="seg pass" style="width:75.3%"></div>
+    <div class="seg fail" style="width:16.9%"></div>
     <div class="seg manual" style="width:7.8%"></div>
     <div class="seg error" style="width:0.0%"></div>
   </div>
   <div class="score-label">
-    53 passed &middot; 18 failed &middot; 6 manual review &middot; 0 errors
+    58 passed &middot; 13 failed &middot; 6 manual review &middot; 0 errors
   </div>
 </div>
 
@@ -161,15 +161,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <table class="sev-table">
   <tr><th>Severity</th><th style="color:var(--pass)">Pass</th><th style="color:var(--fail)">Fail</th><th style="color:var(--manual)">Manual</th><th style="color:var(--error)">Error</th></tr>
   <tr><td><span class="sev-badge cati">CAT I</span></td><td>7</td><td>0</td><td>0</td><td>0</td></tr>
-  <tr><td><span class="sev-badge catii">CAT II</span></td><td>27</td><td>6</td><td>3</td><td>0</td></tr>
+  <tr><td><span class="sev-badge catii">CAT II</span></td><td>32</td><td>1</td><td>3</td><td>0</td></tr>
   <tr><td><span class="sev-badge catiii">CAT III</span></td><td>19</td><td>12</td><td>3</td><td>0</td></tr>
 </table>
 
 <!-- Filters -->
 <div class="filter-bar">
   <button class="filter-btn active" data-filter="all">All (77)</button>
-  <button class="filter-btn" data-filter="fail">Fail (18)</button>
-  <button class="filter-btn" data-filter="pass">Pass (53)</button>
+  <button class="filter-btn" data-filter="fail">Fail (13)</button>
+  <button class="filter-btn" data-filter="pass">Pass (58)</button>
   <button class="filter-btn" data-filter="manual">Manual (6)</button>
   <button class="filter-btn" data-filter="error">Error (0)</button>
   <button class="filter-btn" data-filter="cati">CAT I Only</button>
@@ -418,7 +418,7 @@ Protocol 2</pre></td></tr>
               <tr><th>Result</th><td><strong>All ciphers are FIPS approved.</strong></td></tr>
               <tr><th>Description</th><td>Using non-FIPS ciphers weakens the encryption protecting SSH sessions.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Read the &#x27;Ciphers&#x27; line from /etc/ssh/sshd_config and compared each cipher against the FIPS-approved list: aes256-ctr, aes192-ctr, aes128-ctr, aes256-gcm@openssh.com, aes128-gcm@openssh.com.</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">Ciphers aes256-ctr,aes192-ctr,aes128-ctr</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">Ciphers aes128-ctr,aes256-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  Ciphers aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com<br>3. sudo systemctl restart sshd</td></tr>
             </table>
           </div>
@@ -468,9 +468,9 @@ This IS includes security measures (e.g., authentication and access controls) to
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219166</span>
             <span class="finding-title">Passwords must have a minimum of 15 characters</span>
@@ -479,18 +479,18 @@ This IS includes security measures (e.g., authentication and access controls) to
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219166r879615_rule</td></tr>
-              <tr><th>Result</th><td><strong>minlen is not configured in pwquality.conf.</strong></td></tr>
+              <tr><th>Result</th><td><strong>minlen = 15</strong></td></tr>
               <tr><th>Description</th><td>Short passwords are easier to brute-force. DISA requires a minimum of 15.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;minlen&#x27; and compared the value against the threshold (&gt;= 15).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">minlen=15</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  minlen = 15<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
             </table>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219167</span>
             <span class="finding-title">Passwords must contain at least one uppercase character</span>
@@ -499,18 +499,18 @@ This IS includes security measures (e.g., authentication and access controls) to
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219167r879617_rule</td></tr>
-              <tr><th>Result</th><td><strong>ucredit is not configured in pwquality.conf.</strong></td></tr>
+              <tr><th>Result</th><td><strong>ucredit = -1</strong></td></tr>
               <tr><th>Description</th><td>Password complexity reduces guessability. A negative ucredit enforces uppercase.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;ucredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ucredit=-1</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  ucredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
             </table>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219168</span>
             <span class="finding-title">Passwords must contain at least one lowercase character</span>
@@ -519,18 +519,18 @@ This IS includes security measures (e.g., authentication and access controls) to
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219168r879619_rule</td></tr>
-              <tr><th>Result</th><td><strong>lcredit is not configured in pwquality.conf.</strong></td></tr>
+              <tr><th>Result</th><td><strong>lcredit = -1</strong></td></tr>
               <tr><th>Description</th><td>Password complexity reduces guessability. A negative lcredit enforces lowercase.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;lcredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">lcredit=-1</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  lcredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
             </table>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219169</span>
             <span class="finding-title">Passwords must contain at least one numeric character</span>
@@ -539,18 +539,18 @@ This IS includes security measures (e.g., authentication and access controls) to
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219169r879621_rule</td></tr>
-              <tr><th>Result</th><td><strong>dcredit is not configured in pwquality.conf.</strong></td></tr>
+              <tr><th>Result</th><td><strong>dcredit = -1</strong></td></tr>
               <tr><th>Description</th><td>Digits add entropy. A negative dcredit value requires at least one digit.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;dcredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">dcredit=-1</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  dcredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
             </table>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219170</span>
             <span class="finding-title">Passwords must contain at least one special character</span>
@@ -559,10 +559,10 @@ This IS includes security measures (e.g., authentication and access controls) to
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219170r879623_rule</td></tr>
-              <tr><th>Result</th><td><strong>ocredit is not configured in pwquality.conf.</strong></td></tr>
+              <tr><th>Result</th><td><strong>ocredit = -1</strong></td></tr>
               <tr><th>Description</th><td>Special characters further increase password entropy.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;ocredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ocredit=-1</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  ocredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
             </table>
           </div>
@@ -916,7 +916,7 @@ x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_
             <span class="badge pass">PASS</span>
             <span class="sev-badge catii">CAT II</span>
             <span class="vuln-id">V-219340</span>
-            <span class="finding-title">Time synchronization (NTP/chrony/timesyncd) must be configured and active</span>
+            <span class="finding-title">Time synchronization service (NTP/chrony/timesyncd) must be configured and active</span>
             <span class="chevron">&#9660;</span>
           </div>
           <div class="finding-body">
@@ -1566,9 +1566,9 @@ active</strong></td></tr>
           </div>
         </div>
 
-        <div class="finding fail">
+        <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge fail">FAIL</span>
+            <span class="badge pass">PASS</span>
             <span class="sev-badge catiii">CAT III</span>
             <span class="vuln-id">UBTU-18-031201</span>
             <span class="finding-title">Ubuntu 18.04 must enforce sudo timestamp_timeout</span>
@@ -1577,7 +1577,7 @@ active</strong></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219243r853476_rule</td></tr>
-              <tr><th>Result</th><td><strong>timestamp_timeout not set (default 15 min cache).</strong></td></tr>
+              <tr><th>Result</th><td><strong>sudo timestamp_timeout=0 (re-auth every time).</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
@@ -1666,9 +1666,9 @@ active</strong></td></tr>
           </div>
         </div>
 
-        <div class="finding pass">
+        <div class="finding fail">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
-            <span class="badge pass">PASS</span>
+            <span class="badge fail">FAIL</span>
             <span class="sev-badge catiii">CAT III</span>
             <span class="vuln-id">UBTU-18-031600</span>
             <span class="finding-title">Ubuntu 18.04 must not use NOPASSWD in sudoers</span>
@@ -1677,7 +1677,8 @@ active</strong></td></tr>
           <div class="finding-body">
             <table class="detail-table">
               <tr><th>Rule ID</th><td>SV-219248r853481_rule</td></tr>
-              <tr><th>Result</th><td><strong>No NOPASSWD entries found.</strong></td></tr>
+              <tr><th>Result</th><td><strong>NOPASSWD entries:
+postgres ALL = NOPASSWD: /bin/systemctl stop versa-postgresql, /bin/systemctl start versa-postgresql, /bin/systemctl restart versa-postgresql, /bin/systemctl reload versa-postgresql</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
@@ -1767,6 +1768,13 @@ versa-websockify.service   loaded active running Websockify</pre></td></tr>
               <tr><th>Description</th><td>Unnecessary listening services expand the attack surface.</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;ss -tlnp&#x27; to list all TCP listening sockets with process info.</td></tr>
               <tr><th>Evidence Collected</th><td><pre class="evidence">State    Recv-Q    Send-Q        Local Address:Port        Peer Address:Port    
+LISTEN   0         2048              127.0.0.1:8000             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:6080             0.0.0.0:*       
+LISTEN   0         25                127.0.0.1:514              0.0.0.0:*       
+LISTEN   0         64                127.0.0.1:2024             0.0.0.0:*       
+LISTEN   0         128               127.0.0.1:4200             0.0.0.0:*       
+LISTEN   0         511               127.0.0.1:6379             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:8080             0.0.0.0:*       
 LISTEN   0         128               127.0.0.1:4949             0.0.0.0:*       
 LISTEN   0         128                 0.0.0.0:22               0.0.0.0:*       
 LISTEN   0         25                  0.0.0.0:4566             0.0.0.0:*       
@@ -1777,14 +1785,6 @@ LISTEN   0         100               127.0.0.1:8443             0.0.0.0:*
 LISTEN   0         5                 127.0.0.1:9181             0.0.0.0:*       
 LISTEN   0         100                 0.0.0.0:9182             0.0.0.0:*       
 LISTEN   0         100                 0.0.0.0:9183             0.0.0.0:*       
-LISTEN   0         2048              127.0.0.1:8000             0.0.0.0:*       
-LISTEN   0         100               127.0.0.1:6080             0.0.0.0:*       
-LISTEN   0         50                  0.0.0.0:20514            0.0.0.0:*       
-LISTEN   0         25                127.0.0.1:514              0.0.0.0:*       
-LISTEN   0         64                127.0.0.1:2024             0.0.0.0:*       
-LISTEN   0         128               127.0.0.1:4200             0.0.0.0:*       
-LISTEN   0         511               127.0.0.1:6379             0.0.0.0:*       
-LISTEN   0         100               127.0.0.1:8080             0.0.0.0:*       
 LISTEN   0         128                    [::]:22                  [::]:*       
 LISTEN   0         1054                   [::]:5432                [::]:*       
 LISTEN   0         100                    [::]:25                  [::]:*</pre></td></tr>
@@ -1825,7 +1825,7 @@ Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/vers
 
 <!-- Footer -->
 <div class="report-footer">
-  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T01:02:39.208873+00:00
+  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T02:30:50.302589+00:00
 </div>
 
 <script>
