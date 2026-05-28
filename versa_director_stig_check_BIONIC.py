@@ -1661,6 +1661,7 @@ def check_031201_sudo_timestamp_timeout(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must enforce sudo timestamp_timeout",
                 fix="Add 'Defaults timestamp_timeout=0' to /etc/sudoers via visudo.")
     rc, out, _ = exe.run_sudo("grep -rh 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "timestamp_timeout not set (default 15 min cache)."
     else:
@@ -1731,6 +1732,7 @@ def check_031500_auto_updates(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must have automatic security updates configured",
                 fix="POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks files that are tested and approved.")
     rc, out, _ = exe.run_sudo("dpkg -l unattended-upgrades 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+    f.evidence = out
     if "NOT_INSTALLED" in out:
         f.status, f.detail = "FAIL", "unattended-upgrades is not installed."
     else:
@@ -1748,6 +1750,7 @@ def check_031600_sudo_nopasswd(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must not use NOPASSWD in sudoers",
                 fix="Remove NOPASSWD entries from /etc/sudoers and /etc/sudoers.d/.")
     rc, out, _ = exe.run_sudo("grep -rh 'NOPASSWD' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
+    f.evidence = out
     if "NONE" in out or not out.strip():
         f.status, f.detail = "PASS", "No NOPASSWD entries found."
     else:
@@ -1761,6 +1764,7 @@ def check_031601_sudo_noexec(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 sudo rules should use NOEXEC to restrict shell escapes",
                 fix="Add 'Defaults noexec' to /etc/sudoers or NOEXEC to individual rules.")
     rc, out, _ = exe.run("sudo grep -rh 'NOEXEC\\|noexec' /etc/sudoers /etc/sudoers.d/ 2>/dev/null | grep -v '^#' || echo 'NONE'")
+    f.evidence = out
     if "NONE" in out or not out.strip():
         f.status, f.detail = "MANUAL", "No NOEXEC directives — review if shell escapes possible via sudo."
     else:
@@ -1774,6 +1778,7 @@ def check_031700_tmux_installed(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must have tmux or equivalent for session locking",
                 fix="sudo apt install tmux; configure in /etc/tmux.conf.")
     rc, out, _ = exe.run("dpkg -l tmux 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
+    f.evidence = out
     if "NOT_INSTALLED" in out:
         rc2, out2, _ = exe.run("dpkg -l vlock 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
         if "NOT_INSTALLED" in out2:

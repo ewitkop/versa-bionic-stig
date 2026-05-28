@@ -129,7 +129,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <span><strong>Host:</strong> 10.73.108.217</span>
     <span><strong>Hostname:</strong> Director-217</span>
     <span><strong>OS:</strong> NAME=&quot;Ubuntu&quot;</span>
-    <span><strong>Scan Time:</strong> 2026-05-28T03:27:29.669621+00:00</span>
+    <span><strong>Scan Time:</strong> 2026-05-28T18:56:44.575935+00:00</span>
     <span><strong>Benchmark:</strong> DISA Ubuntu 18.04 LTS STIG V2R13+</span>
   </div>
 </div>
@@ -139,21 +139,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <div class="summary-card pass"><div class="num">59</div><div class="label">Pass</div></div>
   <div class="summary-card fail"><div class="num">11</div><div class="label">Fail</div></div>
   <div class="summary-card manual"><div class="num">6</div><div class="label">Manual</div></div>
-  <div class="summary-card error"><div class="num">0</div><div class="label">Error</div></div>
-  <div class="summary-card"><div class="num">76</div><div class="label">Total Checks</div></div>
-  <div class="summary-card pass"><div class="num">77.6%</div><div class="label">Compliance</div></div>
+  <div class="summary-card error"><div class="num">1</div><div class="label">Error</div></div>
+  <div class="summary-card"><div class="num">77</div><div class="label">Total Checks</div></div>
+  <div class="summary-card pass"><div class="num">76.6%</div><div class="label">Compliance</div></div>
 </div>
 
 <!-- Score Bar -->
 <div class="score-section">
   <div class="score-bar">
-    <div class="seg pass" style="width:77.6%"></div>
-    <div class="seg fail" style="width:14.5%"></div>
-    <div class="seg manual" style="width:7.9%"></div>
-    <div class="seg error" style="width:0.0%"></div>
+    <div class="seg pass" style="width:76.6%"></div>
+    <div class="seg fail" style="width:14.3%"></div>
+    <div class="seg manual" style="width:7.8%"></div>
+    <div class="seg error" style="width:1.3%"></div>
   </div>
   <div class="score-label">
-    59 passed &middot; 11 failed &middot; 6 manual review &middot; 0 errors
+    59 passed &middot; 11 failed &middot; 6 manual review &middot; 1 errors
   </div>
 </div>
 
@@ -161,17 +161,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <table class="sev-table">
   <tr><th>Severity</th><th style="color:var(--pass)">Pass</th><th style="color:var(--fail)">Fail</th><th style="color:var(--manual)">Manual</th><th style="color:var(--error)">Error</th></tr>
   <tr><td><span class="sev-badge cati">CAT I</span></td><td>7</td><td>0</td><td>0</td><td>0</td></tr>
-  <tr><td><span class="sev-badge catii">CAT II</span></td><td>32</td><td>1</td><td>3</td><td>0</td></tr>
+  <tr><td><span class="sev-badge catii">CAT II</span></td><td>32</td><td>1</td><td>3</td><td>1</td></tr>
   <tr><td><span class="sev-badge catiii">CAT III</span></td><td>20</td><td>10</td><td>3</td><td>0</td></tr>
 </table>
 
 <!-- Filters -->
 <div class="filter-bar">
-  <button class="filter-btn active" data-filter="all">All (76)</button>
+  <button class="filter-btn active" data-filter="all">All (77)</button>
   <button class="filter-btn" data-filter="fail">Fail (11)</button>
   <button class="filter-btn" data-filter="pass">Pass (59)</button>
   <button class="filter-btn" data-filter="manual">Manual (6)</button>
-  <button class="filter-btn" data-filter="error">Error (0)</button>
+  <button class="filter-btn" data-filter="error">Error (1)</button>
   <button class="filter-btn" data-filter="cati">CAT I Only</button>
   <button class="filter-btn" data-filter="catii">CAT II Only</button>
   <button class="filter-btn" data-filter="catiii">CAT III Only</button>
@@ -179,6 +179,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 
 <!-- Findings -->
 <div class="findings" id="findings">
+
+        <div class="finding error">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge error">ERROR</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">check_is_versa_director</span>
+            <span class="finding-title">check_is_versa_director</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>ERROR</td></tr>
+              <tr><th>Result</th><td><strong>name &#x27;ssh_client&#x27; is not defined</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix"></td></tr>
+            </table>
+          </div>
+        </div>
 
         <div class="finding pass">
           <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
@@ -1812,6 +1832,7 @@ LISTEN   0         100                 0.0.0.0:9182             0.0.0.0:*
 LISTEN   0         100                 0.0.0.0:9183             0.0.0.0:*       
 LISTEN   0         2048              127.0.0.1:8000             0.0.0.0:*       
 LISTEN   0         100               127.0.0.1:6080             0.0.0.0:*       
+LISTEN   0         50                  0.0.0.0:20514            0.0.0.0:*       
 LISTEN   0         25                127.0.0.1:514              0.0.0.0:*       
 LISTEN   0         64                127.0.0.1:2024             0.0.0.0:*       
 LISTEN   0         128               127.0.0.1:4200             0.0.0.0:*       
@@ -1863,7 +1884,7 @@ Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/vers
 
 <!-- Footer -->
 <div class="report-footer">
-  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T03:27:29.669621+00:00
+  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T18:56:44.575935+00:00
 </div>
 
 <script>
