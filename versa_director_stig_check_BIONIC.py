@@ -133,6 +133,44 @@ class RemoteExecutor:
 #  STIG CHECKS — DISA Canonical Ubuntu 18.04 LTS STIG V2R13+
 # ═══════════════════════════════════════════════════════════════════════════
 
+
+
+# ---------------------------------------------------------------------------
+#  Initial Check for Director
+# ---------------------------------------------------------------------------
+
+
+def check_is_versa_director(exe: RemoteExecutor):
+    command = 'echo -e "show system package-info" | ncs_cli'
+    _, stdout, _ = ssh_client.exec_command(command)
+    output = stdout.read().decode()
+ 
+    if "versa-director" in output:
+        print("CHECK PASSED: This is a Versa Director node.")
+        return True
+    else:
+        print("CHECK FAILED: This is NOT a Versa Director node.")
+        sys.exit(0)
+        return False
+    
+def check_v219151_check_if_Director(exe: RemoteExecutor) -> Finding:
+    """Must be a Director"""
+    f = Finding(
+        "V-219151", "SV-219151r879589_rule", "CAT I",
+        "SSH must not allow authentication with empty passwords",
+        description="Must be a Director",
+        check_method="Must be a Director ",
+        fix="1. Must be a Director")
+    rc, out, _ = exe.run("echo -e 'show system package-info' | ncs_cli")
+    f.evidence = out
+    if "NOT_SET" in out or "no" in out.lower():
+        f.status, f.detail = "PASS", "PermitEmptyPasswords is disabled (default 'no')."
+    else:
+        f.status, f.detail = "FAIL", "Must be a Director"
+    return f
+    
+
+
 # ---------------------------------------------------------------------------
 #  CAT I — CRITICAL
 # ---------------------------------------------------------------------------
@@ -1224,6 +1262,7 @@ def check_030203_ssh_log_level(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 SSH must set LogLevel to INFO or VERBOSE",
                 fix="Set 'LogLevel VERBOSE' in /etc/ssh/sshd_config.")
     rc, out, _ = exe.run_sudo("grep -i '^LogLevel' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "PASS", "LogLevel not set (defaults to INFO)."
     elif "INFO" in out.upper() or "VERBOSE" in out.upper():
@@ -1239,6 +1278,7 @@ def check_030300_passwd_sha512(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must use SHA-512 for password hashing",
                 fix="Set 'ENCRYPT_METHOD SHA512' in /etc/login.defs.")
     rc, out, _ = exe.run_sudo("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "ENCRYPT_METHOD is not set."
     elif "SHA512" in out.upper():
@@ -1254,6 +1294,7 @@ def check_030301_pam_sha512(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 PAM must be configured to use SHA-512 hashing",
                 fix="Ensure pam_unix.so includes 'sha512' in /etc/pam.d/common-password.")
     rc, out, _ = exe.run("grep -E 'pam_unix\\.so' /etc/pam.d/common-password 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "MANUAL", "pam_unix.so not found in /etc/pam.d/common-password."
     elif "sha512" in out.lower():
@@ -1269,6 +1310,7 @@ def check_030400_system_cmd_perms(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 system commands in /usr/bin and /usr/sbin must have mode 755 or less",
                 fix="sudo find /usr/bin /usr/sbin -perm /022 -exec chmod 755 {} \\;")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin -perm /022 -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No system commands with excessive permissions."
     else:
@@ -1283,6 +1325,7 @@ def check_030401_system_cmd_ownership(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 system commands must be owned by root",
                 fix="sudo find /usr/bin /usr/sbin ! -user root -exec chown root {} \\;")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -user root -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All system commands are owned by root."
     else:
@@ -1296,6 +1339,7 @@ def check_030402_system_cmd_group(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 system commands must be group-owned by root",
                 fix="sudo find /usr/bin /usr/sbin ! -group root -exec chgrp root {} \\;")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -group root -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All system commands are group-owned by root."
     else:
@@ -1309,6 +1353,7 @@ def check_030500_lib_perms(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 library files must have mode 755 or less",
                 fix="sudo find /lib /usr/lib -perm /022 -type f -exec chmod 755 {} \\;")
     rc, out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No library files with excessive permissions."
     else:
@@ -1323,6 +1368,7 @@ def check_030501_lib_ownership(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 library files must be owned by root",
                 fix="sudo find /lib /usr/lib ! -user root -type f -exec chown root {} \\;")
     rc, out, _ = exe.run("find /lib /usr/lib ! -user root -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All library files are owned by root."
     else:
@@ -1336,6 +1382,7 @@ def check_030502_lib_group(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 library files must be group-owned by root",
                 fix="sudo find /lib /usr/lib ! -group root -type f -exec chgrp root {} \\;")
     rc, out, _ = exe.run("find /lib /usr/lib ! -group root -type f 2>/dev/null | head -20")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All library files are group-owned by root."
     else:
@@ -1352,6 +1399,7 @@ def check_030600_cron_dirs_restricted(exe: RemoteExecutor) -> Finding:
     bad = []
     for d in dirs:
         rc, out, _ = exe.run(f"stat -c '%a' {d} 2>/dev/null || echo 'MISSING'")
+        f.evidence = out
         if "MISSING" not in out:
             try:
                 mode = int(out.strip(), 8)
@@ -1372,6 +1420,7 @@ def check_030601_crontab_restricted(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 /etc/crontab must have mode 600 or more restrictive",
                 fix="sudo chmod 600 /etc/crontab")
     rc, out, _ = exe.run("stat -c '%a' /etc/crontab 2>/dev/null || echo 'NOT_FOUND'")
+    f.evidence = out
     if "NOT_FOUND" in out:
         f.status, f.detail = "PASS", "/etc/crontab does not exist."
     else:
@@ -1394,6 +1443,7 @@ def check_030700_audit_tools_perms(exe: RemoteExecutor) -> Finding:
     bad = []
     for t in tools:
         rc, out, _ = exe.run(f"stat -c '%a' {t} 2>/dev/null")
+        f.evidence = out
         if out.strip():
             try:
                 mode = int(out.strip(), 8)
@@ -1418,6 +1468,7 @@ def check_030701_audit_tools_ownership(exe: RemoteExecutor) -> Finding:
     bad = []
     for t in tools:
         rc, out, _ = exe.run(f"stat -c '%U' {t} 2>/dev/null")
+        f.evidence = out
         if out.strip() and out.strip() != "root":
             bad.append(f"{t} (owner={out.strip()})")
     if not bad:
@@ -1437,6 +1488,7 @@ def check_030702_audit_tools_group(exe: RemoteExecutor) -> Finding:
     bad = []
     for t in tools:
         rc, out, _ = exe.run(f"stat -c '%G' {t} 2>/dev/null")
+        f.evidence = out
         if out.strip() and out.strip() != "root":
             bad.append(f"{t} (group={out.strip()})")
     if not bad:
@@ -1454,6 +1506,7 @@ def check_030800_home_dir_perms(exe: RemoteExecutor) -> Finding:
     rc, out, _ = exe.run(
         r"awk -F: '($3 >= 1000 && $7 !~ /nologin|false/) {print $6}' /etc/passwd 2>/dev/null"
     )
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No interactive user home directories found."
         return f
@@ -1485,6 +1538,7 @@ def check_030801_home_dir_ownership(exe: RemoteExecutor) -> Finding:
     rc, out, _ = exe.run(
         r"awk -F: '($3 >= 1000 && $7 !~ /nologin|false/) {print $1,$6}' /etc/passwd 2>/dev/null"
     )
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No interactive users found."
         return f
@@ -1510,6 +1564,7 @@ def check_030900_no_duplicate_uids(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must not contain duplicate UIDs",
                 fix="Correct duplicate UIDs in /etc/passwd.")
     rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/passwd | sort | uniq -d 2>/dev/null")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No duplicate UIDs found."
     else:
@@ -1523,6 +1578,7 @@ def check_030901_no_duplicate_gids(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must not contain duplicate GIDs",
                 fix="Correct duplicate GIDs in /etc/group.")
     rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/group | sort | uniq -d 2>/dev/null")
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No duplicate GIDs found."
     else:
@@ -1543,6 +1599,7 @@ def check_031001_no_unowned_files(exe: RemoteExecutor) -> Finding:
         "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
         "2>/dev/null | head -20"
     )
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No unowned files found."
     else:
@@ -1560,6 +1617,7 @@ def check_031002_no_ungrouped_files(exe: RemoteExecutor) -> Finding:
         "! -path '/proc/*' ! -path '/sys/*' ! -path '/dev/*' "
         "2>/dev/null | head -20"
     )
+    f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No ungrouped files found."
     else:
@@ -1587,6 +1645,7 @@ def check_031200_sudo_log(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must configure sudo to log all activity",
                 fix="Add 'Defaults logfile=\"/var/log/sudo.log\"' to /etc/sudoers via visudo.")
     rc, out, _ = exe.run("sudo grep -rh 'Defaults.*logfile' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "sudo is not configured to log activity."
     elif "logfile" in out.lower():
@@ -1731,6 +1790,8 @@ def check_031700_tmux_installed(exe: RemoteExecutor) -> Finding:
 # ═══════════════════════════════════════════════════════════════════════════
 
 ALL_CHECKS = [
+    #INITIAL CHECKS
+    check_is_versa_director,
     # CAT I
     check_v219150_ssh_protocol,
     check_v219151_ssh_empty_passwords,

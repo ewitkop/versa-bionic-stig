@@ -129,7 +129,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <span><strong>Host:</strong> 10.73.108.217</span>
     <span><strong>Hostname:</strong> Director-217</span>
     <span><strong>OS:</strong> NAME=&quot;Ubuntu&quot;</span>
-    <span><strong>Scan Time:</strong> 2026-05-28T03:09:40.393680+00:00</span>
+    <span><strong>Scan Time:</strong> 2026-05-28T03:27:29.669621+00:00</span>
     <span><strong>Benchmark:</strong> DISA Ubuntu 18.04 LTS STIG V2R13+</span>
   </div>
 </div>
@@ -990,7 +990,9 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>TMOUT is set to 900 seconds.</strong></td></tr>
               <tr><th>Description</th><td>The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly</td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">TMOUT=900
+ readonly TMOUT
+ export TMOUT</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Add &#x27;TMOUT=900&#x27; and &#x27;readonly TMOUT; export TMOUT&#x27; to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.</td></tr>
             </table>
           </div>
@@ -1030,7 +1032,26 @@ lsmod: NOT_LOADED</pre></td></tr>
 /usr/bin/telnet.netkit</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/usr/bin/curl
+/usr/bin/expiry
+/usr/bin/python2.7
+/usr/bin/mtr
+/usr/bin/dotlockfile
+/usr/bin/perl
+/usr/bin/mlocate
+/usr/bin/ssh-agent
+/usr/bin/python3.8
+/usr/bin/netkit-ftp
+/usr/bin/at
+/usr/bin/bsd-write
+/usr/bin/wget
+/usr/bin/perl5.26.1
+/usr/bin/gawk
+/usr/bin/crontab
+/usr/bin/vim.basic
+/usr/bin/python3.6m
+/usr/bin/python3.6
+/usr/bin/telnet.netkit</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo find /usr/bin /usr/sbin ! -group root -exec chgrp root {} \;</td></tr>
             </table>
           </div>
@@ -1090,7 +1111,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>X11Forwarding is disabled.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">X11Forwarding no</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Set &#x27;X11Forwarding no&#x27; in /etc/ssh/sshd_config.</td></tr>
             </table>
           </div>
@@ -1110,7 +1131,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>PermitUserEnvironment is disabled.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Set &#x27;PermitUserEnvironment no&#x27; in /etc/ssh/sshd_config.</td></tr>
             </table>
           </div>
@@ -1130,7 +1151,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>SSH UsePAM is enabled.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">UsePAM yes</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Set &#x27;UsePAM yes&#x27; in /etc/ssh/sshd_config.</td></tr>
             </table>
           </div>
@@ -1150,7 +1171,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>LogLevel not set (defaults to INFO).</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Set &#x27;LogLevel VERBOSE&#x27; in /etc/ssh/sshd_config.</td></tr>
             </table>
           </div>
@@ -1170,7 +1191,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>Password hashing: ENCRYPT_METHOD SHA512</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ENCRYPT_METHOD SHA512</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Set &#x27;ENCRYPT_METHOD SHA512&#x27; in /etc/login.defs.</td></tr>
             </table>
           </div>
@@ -1190,7 +1211,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>PAM uses SHA-512: password	[success=1 default=ignore]	pam_unix.so obscure  try_first_pass sha512 remember=5</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">password	[success=1 default=ignore]	pam_unix.so obscure  try_first_pass sha512 remember=5</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Ensure pam_unix.so includes &#x27;sha512&#x27; in /etc/pam.d/common-password.</td></tr>
             </table>
           </div>
@@ -1211,7 +1232,7 @@ lsmod: NOT_LOADED</pre></td></tr>
 /usr/bin/at</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/usr/bin/at</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo find /usr/bin /usr/sbin ! -user root -exec chown root {} \;</td></tr>
             </table>
           </div>
@@ -1243,7 +1264,26 @@ lsmod: NOT_LOADED</pre></td></tr>
 /usr/lib/ipsec/plugins/.libstro</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/.libgcrypt.so.20.hmac
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/ipsec/.libcharon.so.0.0.0.hmac
+/usr/lib/ipsec/.pool.hmac
+/usr/lib/ipsec/.ikev2-kdf-selftest.hmac
+/usr/lib/ipsec/.scepclient.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-fips-prf.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-sshkey.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pkcs8.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-socket-default.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pkcs1.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-resolve.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-updown.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pem.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-openssl.so.hmac</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib -perm /022 -type f -exec chmod 755 {} \;</td></tr>
             </table>
           </div>
@@ -1269,7 +1309,12 @@ lsmod: NOT_LOADED</pre></td></tr>
 /lib/x86_64-linux-gnu/libnss_ato.so.2</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib ! -user root -type f -exec chown root {} \;</td></tr>
             </table>
           </div>
@@ -1297,7 +1342,14 @@ lsmod: NOT_LOADED</pre></td></tr>
 /usr/lib/dbus-1.0/dbus-daemon-launch-helper</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/vlock/modules/nosysrq.so
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib ! -group root -type f -exec chgrp root {} \;</td></tr>
             </table>
           </div>
@@ -1317,7 +1369,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>Cron dirs with excessive permissions: /etc/cron.d=0o755, /etc/cron.daily=0o755, /etc/cron.hourly=0o755, /etc/cron.monthly=0o755, /etc/cron.weekly=0o755</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">755</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo chmod 700 /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly</td></tr>
             </table>
           </div>
@@ -1337,7 +1389,7 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>/etc/crontab mode: 0o644 (must be ≤ 0600)</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">644</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo chmod 600 /etc/crontab</td></tr>
             </table>
           </div>
@@ -1417,7 +1469,11 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>All home directories have mode 750 or less.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/home/vnmshauser
+/home/Administrator
+/home/aaaadmin
+/home/versa
+/home/erik</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo chmod 0750 /home/&lt;user&gt; for each offending directory.</td></tr>
             </table>
           </div>
@@ -1437,7 +1493,11 @@ lsmod: NOT_LOADED</pre></td></tr>
               <tr><th>Result</th><td><strong>All home directories are correctly owned.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">vnmshauser /home/vnmshauser
+Administrator /home/Administrator
+aaaadmin /home/aaaadmin
+versa /home/versa
+erik /home/erik</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">sudo chown &lt;user&gt;:&lt;user&gt; /home/&lt;user&gt; for each mismatched directory.</td></tr>
             </table>
           </div>
@@ -1539,7 +1599,7 @@ active</strong></td></tr>
               <tr><th>Result</th><td><strong>sudo is not configured to log activity.</strong></td></tr>
               <tr><th>Description</th><td></td></tr>
               <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
-              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
               <tr><th>Remediation Steps</th><td class="fix">Add &#x27;Defaults logfile=&quot;/var/log/sudo.log&quot;&#x27; to /etc/sudoers via visudo.</td></tr>
             </table>
           </div>
@@ -1803,7 +1863,7 @@ Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/vers
 
 <!-- Footer -->
 <div class="report-footer">
-  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T03:09:40.393680+00:00
+  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T03:27:29.669621+00:00
 </div>
 
 <script>

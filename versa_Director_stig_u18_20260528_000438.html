@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STIG Compliance Report — Director-217 — 2026-05-28</title>
+<style>
+:root {
+  --pass: #22c55e; --fail: #ef4444; --manual: #f59e0b;
+  --error: #a855f7; --na: #6b7280;
+  --cat1: #dc2626; --cat2: #f97316; --cat3: #3b82f6;
+  --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+  --text: #1e293b; --muted: #64748b; --code-bg: #f1f5f9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       background: var(--bg); color: var(--text); line-height: 1.6; }
+
+/* -- Header -- */
+.report-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #f8fafc; padding: 2rem; border-bottom: 4px solid var(--pass);
+}
+.report-header h1 { font-size: 1.5rem; font-weight: 700; }
+.report-header .meta { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 0.75rem;
+                        font-size: 0.9rem; color: #94a3b8; }
+.report-header .meta span { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+/* -- Summary cards -- */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem; padding: 1.5rem 2rem; }
+.summary-card { background: var(--card); border-radius: 8px; padding: 1rem 1.25rem;
+                 box-shadow: 0 1px 3px rgba(0,0,0,.08); text-align: center; }
+.summary-card .num { font-size: 2rem; font-weight: 700; }
+.summary-card .label { font-size: 0.8rem; text-transform: uppercase; color: var(--muted); }
+.summary-card.pass .num { color: var(--pass); }
+.summary-card.fail .num { color: var(--fail); }
+.summary-card.manual .num { color: var(--manual); }
+.summary-card.error .num { color: var(--error); }
+
+/* -- Score bar -- */
+.score-section { padding: 0 2rem 1rem; }
+.score-bar { height: 28px; border-radius: 14px; overflow: hidden; display: flex;
+              background: var(--border); }
+.score-bar .seg { height: 100%; transition: width .4s; }
+.score-bar .seg.pass { background: var(--pass); }
+.score-bar .seg.fail { background: var(--fail); }
+.score-bar .seg.manual { background: var(--manual); }
+.score-bar .seg.error { background: var(--error); }
+.score-label { font-size: 0.85rem; margin-top: 0.4rem; color: var(--muted); }
+
+/* -- Severity breakdown -- */
+.sev-table { margin: 0 2rem 1.5rem; border-collapse: collapse; width: calc(100% - 4rem); }
+.sev-table th, .sev-table td { padding: 0.5rem 1rem; text-align: center; border: 1px solid var(--border); }
+.sev-table th { background: #f1f5f9; font-size: 0.8rem; text-transform: uppercase; }
+.sev-table td { font-weight: 600; }
+
+/* -- Filter bar -- */
+.filter-bar { padding: 0 2rem 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.filter-btn { padding: 0.35rem 1rem; border: 1px solid var(--border); border-radius: 20px;
+               background: var(--card); cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+.filter-btn:hover { background: #e2e8f0; }
+.filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* -- Findings -- */
+.findings { padding: 0 2rem 3rem; }
+.finding { background: var(--card); border-radius: 8px; margin-bottom: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden;
+            border-left: 4px solid var(--border); }
+.finding.pass { border-left-color: var(--pass); }
+.finding.fail { border-left-color: var(--fail); }
+.finding.manual { border-left-color: var(--manual); }
+.finding.error { border-left-color: var(--error); }
+
+.finding-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 1rem;
+                   cursor: pointer; user-select: none; }
+.finding-header:hover { background: #f8fafc; }
+.chevron { margin-left: auto; font-size: 0.7rem; transition: transform .2s; color: var(--muted); }
+.finding.open .chevron { transform: rotate(180deg); }
+
+.finding-body { display: none; padding: 0 1rem 1rem; }
+.finding.open .finding-body { display: block; }
+
+.badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 4px;
+          font-size: 0.7rem; font-weight: 700; color: #fff; text-transform: uppercase; }
+.badge.pass { background: var(--pass); }
+.badge.fail { background: var(--fail); }
+.badge.manual { background: var(--manual); color: #1e293b; }
+.badge.error { background: var(--error); }
+.badge.na { background: var(--na); }
+
+.sev-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+              font-size: 0.65rem; font-weight: 700; color: #fff; }
+.sev-badge.cati { background: var(--cat1); }
+.sev-badge.catii { background: var(--cat2); }
+.sev-badge.catiii { background: var(--cat3); }
+
+.vuln-id { font-family: "SF Mono", Consolas, monospace; font-size: 0.82rem; color: var(--muted); }
+.finding-title { font-weight: 600; font-size: 0.88rem; }
+
+.detail-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.detail-table th { width: 160px; text-align: left; vertical-align: top; padding: 0.5rem 0.75rem;
+                    background: #f8fafc; border: 1px solid var(--border); color: var(--muted);
+                    font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+.detail-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+.evidence { background: var(--code-bg); padding: 0.75rem; border-radius: 4px;
+             font-family: "SF Mono", Consolas, monospace; font-size: 0.78rem;
+             white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+.check-method, .fix { line-height: 1.7; }
+
+/* -- Print -- */
+@media print {
+  .filter-bar { display: none; }
+  .finding-body { display: block !important; }
+  .finding { page-break-inside: avoid; }
+  .report-header { background: #1e293b !important; -webkit-print-color-adjust: exact; }
+}
+
+/* -- Footer -- */
+.report-footer { text-align: center; padding: 2rem; font-size: 0.78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="report-header">
+  <h1>STIG Compliance Report — Versa Director</h1>
+  <div class="meta">
+    <span><strong>Host:</strong> 10.73.108.217</span>
+    <span><strong>Hostname:</strong> Director-217</span>
+    <span><strong>OS:</strong> NAME=&quot;Ubuntu&quot;</span>
+    <span><strong>Scan Time:</strong> 2026-05-28T04:03:41.395525+00:00</span>
+    <span><strong>Benchmark:</strong> DISA Ubuntu 18.04 LTS STIG V2R13+</span>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary">
+  <div class="summary-card pass"><div class="num">59</div><div class="label">Pass</div></div>
+  <div class="summary-card fail"><div class="num">11</div><div class="label">Fail</div></div>
+  <div class="summary-card manual"><div class="num">6</div><div class="label">Manual</div></div>
+  <div class="summary-card error"><div class="num">1</div><div class="label">Error</div></div>
+  <div class="summary-card"><div class="num">77</div><div class="label">Total Checks</div></div>
+  <div class="summary-card pass"><div class="num">76.6%</div><div class="label">Compliance</div></div>
+</div>
+
+<!-- Score Bar -->
+<div class="score-section">
+  <div class="score-bar">
+    <div class="seg pass" style="width:76.6%"></div>
+    <div class="seg fail" style="width:14.3%"></div>
+    <div class="seg manual" style="width:7.8%"></div>
+    <div class="seg error" style="width:1.3%"></div>
+  </div>
+  <div class="score-label">
+    59 passed &middot; 11 failed &middot; 6 manual review &middot; 1 errors
+  </div>
+</div>
+
+<!-- Severity Breakdown -->
+<table class="sev-table">
+  <tr><th>Severity</th><th style="color:var(--pass)">Pass</th><th style="color:var(--fail)">Fail</th><th style="color:var(--manual)">Manual</th><th style="color:var(--error)">Error</th></tr>
+  <tr><td><span class="sev-badge cati">CAT I</span></td><td>7</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td><span class="sev-badge catii">CAT II</span></td><td>32</td><td>1</td><td>3</td><td>1</td></tr>
+  <tr><td><span class="sev-badge catiii">CAT III</span></td><td>20</td><td>10</td><td>3</td><td>0</td></tr>
+</table>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all">All (77)</button>
+  <button class="filter-btn" data-filter="fail">Fail (11)</button>
+  <button class="filter-btn" data-filter="pass">Pass (59)</button>
+  <button class="filter-btn" data-filter="manual">Manual (6)</button>
+  <button class="filter-btn" data-filter="error">Error (1)</button>
+  <button class="filter-btn" data-filter="cati">CAT I Only</button>
+  <button class="filter-btn" data-filter="catii">CAT II Only</button>
+  <button class="filter-btn" data-filter="catiii">CAT III Only</button>
+</div>
+
+<!-- Findings -->
+<div class="findings" id="findings">
+
+        <div class="finding error">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge error">ERROR</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">check_is_versa_director</span>
+            <span class="finding-title">check_is_versa_director</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>ERROR</td></tr>
+              <tr><th>Result</th><td><strong>name &#x27;ssh_client&#x27; is not defined</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix"></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219150</span>
+            <span class="finding-title">SSH must be configured to use only protocol version 2</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219150r879587_rule</td></tr>
+              <tr><th>Result</th><td><strong>OpenSSH version enforces protocol 2 by default.</strong></td></tr>
+              <tr><th>Description</th><td>The system must implement DoD-approved encryption for SSH. Protocol version 1 has known vulnerabilities and must not be used.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">1. Ran &#x27;ssh -V&#x27; to determine the installed OpenSSH version.<br>2. Searched /etc/ssh/sshd_config for a &#x27;Protocol&#x27; directive.<br>3. OpenSSH &gt;= 7.6 removed protocol 1 support entirely, so the version alone confirms compliance unless Protocol 1 is forced.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">OpenSSH_7.9p1 Ubuntu-10~ubuntu18.04.fips.0.2, OpenSSL 1.1.1  11 Sep 2018
+---
+Protocol 2</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config.<br>2. Ensure the line reads:  Protocol 2<br>   (On OpenSSH &gt;= 7.6 this is the only supported option.)<br>3. Restart SSH:  sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219151</span>
+            <span class="finding-title">SSH must not allow authentication with empty passwords</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219151r879589_rule</td></tr>
+              <tr><th>Result</th><td><strong>PermitEmptyPasswords is disabled (default &#x27;no&#x27;).</strong></td></tr>
+              <tr><th>Description</th><td>If empty passwords are permitted, any account without a password set becomes a trivial attack vector.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;PermitEmptyPasswords&#x27;. The default in OpenSSH is &#x27;no&#x27;, so if the directive is absent or set to &#x27;no&#x27; the check passes.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config.<br>2. Set:  PermitEmptyPasswords no<br>3. Restart SSH:  sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219210</span>
+            <span class="finding-title">GRUB configuration file must be owned by root with mode 0600 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219210r879681_rule</td></tr>
+              <tr><th>Result</th><td><strong>GRUB config: mode=0o600, owner=root:root</strong></td></tr>
+              <tr><th>Description</th><td>Unauthorized modification of the GRUB bootloader configuration could allow an attacker to boot into single-user mode or alter kernel parameters.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;stat -c &quot;%a %U:%G&quot; /boot/grub/grub.cfg&#x27; and compared the octal mode against 0600 and the owner against root:root.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">600 root:root</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo chown root:root /boot/grub/grub.cfg<br>2. sudo chmod 0600 /boot/grub/grub.cfg</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219211</span>
+            <span class="finding-title">The telnet server package must not be installed</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219211r879683_rule</td></tr>
+              <tr><th>Result</th><td><strong>Telnet server is not installed.</strong></td></tr>
+              <tr><th>Description</th><td>Telnet transmits data (including credentials) in cleartext and must not be used for remote administration.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;dpkg -l telnetd inetutils-telnetd&#x27; and checked for installed (&#x27;ii&#x27;) status lines.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_INSTALLED</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo apt remove --purge telnetd inetutils-telnetd<br>2. Verify removal:  dpkg -l telnetd inetutils-telnetd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219212</span>
+            <span class="finding-title">The rsh-server package must not be installed</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219212r879685_rule</td></tr>
+              <tr><th>Result</th><td><strong>rsh-server is not installed.</strong></td></tr>
+              <tr><th>Description</th><td>rsh provides unencrypted remote shell access and is a high-risk service.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;dpkg -l rsh-server&#x27; and checked for &#x27;ii&#x27; (installed) status.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_INSTALLED</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo apt remove --purge rsh-server<br>2. Verify:  dpkg -l rsh-server</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219230</span>
+            <span class="finding-title">The system must disable the Ctrl-Alt-Delete reboot key sequence</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219230r879719_rule</td></tr>
+              <tr><th>Result</th><td><strong>ctrl-alt-del.target is masked.</strong></td></tr>
+              <tr><th>Description</th><td>A locally logged-in user could accidentally or maliciously reboot the system using Ctrl-Alt-Del if it is not masked.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;systemctl status ctrl-alt-del.target&#x27; and checked whether it is masked (symlinked to /dev/null).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">● ctrl-alt-del.target
+   Loaded: masked (/dev/null; bad)
+   Active: inactive (dead)</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo systemctl mask ctrl-alt-del.target<br>2. sudo systemctl daemon-reload<br>3. Verify:  systemctl status ctrl-alt-del.target (should show &#x27;masked&#x27;)</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge cati">CAT I</span>
+            <span class="vuln-id">V-219240</span>
+            <span class="finding-title">FIPS 140-2 mode must be enabled on the operating system</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219240r879739_rule</td></tr>
+              <tr><th>Result</th><td><strong>FIPS mode is enabled (fips_enabled=1).</strong></td></tr>
+              <tr><th>Description</th><td>FIPS 140-2 validated cryptography is required for DoD systems to protect sensitive data at rest and in transit.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Read /proc/sys/crypto/fips_enabled. A value of &#x27;1&#x27; means FIPS mode is active; &#x27;0&#x27; means it is not.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Install the FIPS kernel:  sudo ua enable fips  (or manually install fips packages)<br>2. Add &#x27;fips=1&#x27; to GRUB_CMDLINE_LINUX in /etc/default/grub<br>3. sudo update-grub &amp;&amp; sudo reboot<br>4. Verify:  cat /proc/sys/crypto/fips_enabled  (should return 1)</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219152</span>
+            <span class="finding-title">SSH must not allow direct login as root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219152r879591_rule</td></tr>
+              <tr><th>Result</th><td><strong>Root login is disabled.</strong></td></tr>
+              <tr><th>Description</th><td>Direct root login over SSH bypasses accountability; administrators should authenticate with personal accounts and escalate with sudo.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;PermitRootLogin&#x27;. The directive must be set to &#x27;no&#x27; (not &#x27;without-password&#x27; or &#x27;prohibit-password&#x27;).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">PermitRootLogin no</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  PermitRootLogin no<br>3. sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219153</span>
+            <span class="finding-title">SSH X11 forwarding must be disabled</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219153r879593_rule</td></tr>
+              <tr><th>Result</th><td><strong>X11Forwarding is disabled.</strong></td></tr>
+              <tr><th>Description</th><td>X11 forwarding over SSH can expose the X11 display to the remote server, creating a potential attack surface.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;X11Forwarding&#x27;. Must be &#x27;no&#x27;.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">X11Forwarding no</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  X11Forwarding no<br>3. sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219154</span>
+            <span class="finding-title">SSH ClientAliveInterval must be set to 600 seconds or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219154r879595_rule</td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveInterval = 300s</strong></td></tr>
+              <tr><th>Description</th><td>An idle SSH session that remains open indefinitely is an attack vector if a user steps away from their workstation.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;ClientAliveInterval&#x27;. The value must be between 1 and 600 (inclusive).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ClientAliveInterval 300</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  ClientAliveInterval 600<br>3. sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219155</span>
+            <span class="finding-title">SSH ClientAliveCountMax must be set to 1</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219155r879597_rule</td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveCountMax = 1</strong></td></tr>
+              <tr><th>Description</th><td>Combined with ClientAliveInterval, this ensures the session is terminated promptly after the interval expires without a response.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/ssh/sshd_config for &#x27;ClientAliveCountMax&#x27;. Must be &lt;= 1.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ClientAliveCountMax 1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. In Director CLI, &#x27;set system settings ssh client-alive-count-max 1&#x27; 2. Then type &#x27;commit&#x27;<br></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219156</span>
+            <span class="finding-title">SSH must only allow FIPS 140-2 compliant ciphers</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219156r879599_rule</td></tr>
+              <tr><th>Result</th><td><strong>All ciphers are FIPS approved.</strong></td></tr>
+              <tr><th>Description</th><td>Using non-FIPS ciphers weakens the encryption protecting SSH sessions.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Read the &#x27;Ciphers&#x27; line from /etc/ssh/sshd_config and compared each cipher against the FIPS-approved list: aes256-ctr, aes192-ctr, aes128-ctr, aes256-gcm@openssh.com, aes128-gcm@openssh.com.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">Ciphers aes128-ctr,aes256-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  Ciphers aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com<br>3. sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219157</span>
+            <span class="finding-title">SSH must only allow FIPS 140-2 compliant MACs</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219157r879601_rule</td></tr>
+              <tr><th>Result</th><td><strong>All MACs are FIPS approved.</strong></td></tr>
+              <tr><th>Description</th><td>Message Authentication Codes protect data integrity during SSH sessions.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Read the &#x27;MACs&#x27; line from /etc/ssh/sshd_config and compared each MAC against the approved list: hmac-sha2-256, hmac-sha2-512 (and their -etm@openssh.com variants).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/ssh/sshd_config<br>2. Set:  MACs hmac-sha2-256,hmac-sha2-512,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com<br>3. sudo systemctl restart sshd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219158</span>
+            <span class="finding-title">SSH must display a DoD-approved banner before authentication</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219158r879603_rule</td></tr>
+              <tr><th>Result</th><td><strong>SSH Banner is set and contains USG content.</strong></td></tr>
+              <tr><th>Description</th><td>Displaying a warning banner establishes legal notice that the system is for authorized use only, which is required for prosecution.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">1. Checked for existance of a USG DOD in /var/versa/banners/motd_banner.<br>2. If set, verified the referenced file exists and is non-empty.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only. By using this IS (which includes any device attached to this IS), you consent to the following conditions:
+The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+At any time, the USG may inspect and seize data stored on this IS.
+Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG authorized purpose.
+This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Browse to the Versa Director, Administration, System, Banner and set the appropriate USG banner<br></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219166</span>
+            <span class="finding-title">Passwords must have a minimum of 15 characters</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219166r879615_rule</td></tr>
+              <tr><th>Result</th><td><strong>minlen = 15</strong></td></tr>
+              <tr><th>Description</th><td>Short passwords are easier to brute-force. DISA requires a minimum of 15.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;minlen&#x27; and compared the value against the threshold (&gt;= 15).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">minlen=15</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  minlen = 15<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219167</span>
+            <span class="finding-title">Passwords must contain at least one uppercase character</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219167r879617_rule</td></tr>
+              <tr><th>Result</th><td><strong>ucredit = -1</strong></td></tr>
+              <tr><th>Description</th><td>Password complexity reduces guessability. A negative ucredit enforces uppercase.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;ucredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ucredit=-1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  ucredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219168</span>
+            <span class="finding-title">Passwords must contain at least one lowercase character</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219168r879619_rule</td></tr>
+              <tr><th>Result</th><td><strong>lcredit = -1</strong></td></tr>
+              <tr><th>Description</th><td>Password complexity reduces guessability. A negative lcredit enforces lowercase.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;lcredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">lcredit=-1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  lcredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219169</span>
+            <span class="finding-title">Passwords must contain at least one numeric character</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219169r879621_rule</td></tr>
+              <tr><th>Result</th><td><strong>dcredit = -1</strong></td></tr>
+              <tr><th>Description</th><td>Digits add entropy. A negative dcredit value requires at least one digit.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;dcredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">dcredit=-1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  dcredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219170</span>
+            <span class="finding-title">Passwords must contain at least one special character</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219170r879623_rule</td></tr>
+              <tr><th>Result</th><td><strong>ocredit = -1</strong></td></tr>
+              <tr><th>Description</th><td>Special characters further increase password entropy.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/pwquality.conf for &#x27;ocredit&#x27; and compared the value against the threshold (&lt;= -1).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ocredit=-1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/pwquality.conf<br>2. Set:  ocredit = -1<br>3. No service restart required — PAM reads the file on each authentication.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219171</span>
+            <span class="finding-title">System must prohibit password reuse for a minimum of 5 generations</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219171r879625_rule</td></tr>
+              <tr><th>Result</th><td><strong>remember = 5</strong></td></tr>
+              <tr><th>Description</th><td>Reusing recent passwords makes compromise more likely after a leak.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/pam.d/common-password for pam_unix or pam_pwhistory with &#x27;remember=N&#x27; and verified N &gt;= 5.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">password	[success=1 default=ignore]	pam_unix.so obscure  try_first_pass sha512 remember=5</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/pam.d/common-password<br>2. On the pam_unix.so line, add:  remember=5<br>   Or add a pam_pwhistory.so line:  password required pam_pwhistory.so remember=5</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219172</span>
+            <span class="finding-title">Password maximum lifetime must be restricted to 60 days</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219172r879627_rule</td></tr>
+              <tr><th>Result</th><td><strong>PASS_MAX_DAYS = 60</strong></td></tr>
+              <tr><th>Description</th><td>Forcing periodic password changes limits the window an attacker has to use a compromised credential.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Read &#x27;PASS_MAX_DAYS&#x27; from /etc/login.defs and verified &lt;= 60.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">PASS_MAX_DAYS 60</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/login.defs<br>2. Set:  PASS_MAX_DAYS   60<br>3. For existing users:  sudo chage --maxdays 60 &lt;username&gt;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219173</span>
+            <span class="finding-title">Password minimum lifetime must be at least 1 day</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219173r879629_rule</td></tr>
+              <tr><th>Result</th><td><strong>PASS_MIN_DAYS = 1</strong></td></tr>
+              <tr><th>Description</th><td>Without a minimum age, users can cycle through passwords to reuse an old one.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Read &#x27;PASS_MIN_DAYS&#x27; from /etc/login.defs and verified &gt;= 1.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">PASS_MIN_DAYS 1</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/login.defs<br>2. Set:  PASS_MIN_DAYS   1<br>3. For existing users:  sudo chage --mindays 1 &lt;username&gt;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219174</span>
+            <span class="finding-title">Account must lock after 3 consecutive invalid login attempts</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219174r879631_rule</td></tr>
+              <tr><th>Result</th><td><strong>Account lockout deny=3</strong></td></tr>
+              <tr><th>Description</th><td>Account lockout mitigates brute-force attacks against user credentials.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /etc/security/faillock.conf for&#x27;deny=N&#x27; and verified N &lt;= 3.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">deny=3</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/security/faillock.conf<br>2. Uncomment &#x27;deny=3&#x27;, add &#x27;unlock_time=900&#x27; and &#x27;fail_interval = 900&#x27;<br></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219200</span>
+            <span class="finding-title">The audit system (auditd) must be installed</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219200r879661_rule</td></tr>
+              <tr><th>Result</th><td><strong>auditd is installed.</strong></td></tr>
+              <tr><th>Description</th><td>auditd provides the kernel audit framework required for accountability.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;dpkg -l auditd&#x27; and looked for installed status (&#x27;ii&#x27;).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ii  auditd         1:2.8.2-1ubuntu1.1 amd64        User space tools for security auditing</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo apt install auditd audispd-plugins<br>2. sudo systemctl enable auditd<br>3. sudo systemctl start auditd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219201</span>
+            <span class="finding-title">The audit service (auditd) must be running and enabled at boot</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219201r879663_rule</td></tr>
+              <tr><th>Result</th><td><strong>auditd is active and enabled.</strong></td></tr>
+              <tr><th>Description</th><td>If auditd is not running, no kernel audit events are collected.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;systemctl is-active auditd&#x27; and &#x27;systemctl is-enabled auditd&#x27;.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">is-active: active
+is-enabled: enabled</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo systemctl enable auditd<br>2. sudo systemctl start auditd<br>3. Verify:  systemctl is-active auditd  -&gt;  active</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-238230</span>
+            <span class="finding-title">Ubuntu 18 audit log files must have mode 0600 or less permissive</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-238230r653865_rule</td></tr>
+              <tr><th>Result</th><td><strong>Audit log mode: 0o640</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chmod 0600 /var/log/audit/audit.log.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219220</span>
+            <span class="finding-title">A file integrity monitoring tool must be installed (AIDE)</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219220r879699_rule</td></tr>
+              <tr><th>Result</th><td><strong>No file integrity tool (AIDE/Tripwire/OSSEC) found. Versa Networks does not approve any 3rd party software installs.</strong></td></tr>
+              <tr><th>Description</th><td>File integrity tools detect unauthorized modifications to system files. It should be noted that Versa Networks does not approve of any 3rd applications.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Checked for AIDE, Tripwire, or OSSEC via dpkg -l.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_INSTALLED
+NOT_INSTALLED</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo apt install aide aide-common<br>2. Initialize the database:  sudo aideinit<br>3. Schedule daily checks:  add &#x27;aide --check&#x27; to cron</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219300</span>
+            <span class="finding-title">/etc/shadow must have permissions 0o640 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219300r879859_rule</td></tr>
+              <tr><th>Result</th><td><strong>/etc/shadow: mode=0o640, owner=root:shadow</strong></td></tr>
+              <tr><th>Description</th><td>Incorrect permissions on /etc/shadow could allow unauthorized access. Contains hashed passwords; must be tightly restricted.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;stat -c &quot;%a %U:%G&quot; /etc/shadow&#x27; and compared mode against 0o640 and owner against root:shadow.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">640 root:shadow</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo chmod 640 /etc/shadow<br>2. sudo chown root:shadow /etc/shadow</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219310</span>
+            <span class="finding-title">/etc/passwd must have permissions 0o644 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219310r879879_rule</td></tr>
+              <tr><th>Result</th><td><strong>/etc/passwd: mode=0o644, owner=root:root</strong></td></tr>
+              <tr><th>Description</th><td>Incorrect permissions on /etc/passwd could allow unauthorized access. World-readable is acceptable (needed for name lookups) but not world-writable.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;stat -c &quot;%a %U:%G&quot; /etc/passwd&#x27; and compared mode against 0o644 and owner against root:root.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">644 root:root</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo chmod 644 /etc/passwd<br>2. sudo chown root:root /etc/passwd</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219311</span>
+            <span class="finding-title">/etc/group must have permissions 0o644 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219311r879881_rule</td></tr>
+              <tr><th>Result</th><td><strong>/etc/group: mode=0o644, owner=root:root</strong></td></tr>
+              <tr><th>Description</th><td>Incorrect permissions on /etc/group could allow unauthorized access. Group file should be owned by root and not world-writable.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;stat -c &quot;%a %U:%G&quot; /etc/group&#x27; and compared mode against 0o644 and owner against root:root.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">644 root:root</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo chmod 644 /etc/group<br>2. sudo chown root:root /etc/group</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219250</span>
+            <span class="finding-title">The /tmp partition must be mounted with the noexec option</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219250r879759_rule</td></tr>
+              <tr><th>Result</th><td><strong>/tmp is not a separate mount — review whether it should be.</strong></td></tr>
+              <tr><th>Description</th><td>Preventing execution from /tmp mitigates common malware staging techniques.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;mount | grep /tmp&#x27; and checked for the &#x27;noexec&#x27; option in mount flags.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_MOUNTED</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Edit /etc/fstab, add &#x27;noexec&#x27; to the /tmp mount options.<br>   Example: tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev 0 0<br>2. Remount:  sudo mount -o remount /tmp</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219260</span>
+            <span class="finding-title">An application firewall (UFW or iptables) must be installed and active</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219260r879779_rule</td></tr>
+              <tr><th>Result</th><td><strong>iptables rules are in place.</strong></td></tr>
+              <tr><th>Description</th><td>A host-based firewall restricts network access to only required services. All Versa Head End appliances run a host-based stateful firewall.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">1. Ran &#x27;lsmod | grep ip_tables&#x27; to check iptables.<br></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ip_tables              28672  4 iptable_filter,iptable_nat
+x_tables               40960  12 ip6table_filter,xt_conntrack,iptable_filter,xt_multiport,xt_string,xt_tcpudp,ipt_MASQUERADE,xt_addrtype,xt_nat,ip6_tables,ipt_REJECT,ip_tables</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. sudo iptables<br>2. Configure rules Example:  sudo iptables -A INPUT -i lo -j ACCEPT<br>3. Verify:  sudo iptables -L -n</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219270</span>
+            <span class="finding-title">System logs must be forwarded to a centralized remote syslog server</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219270r879799_rule</td></tr>
+              <tr><th>Result</th><td><strong>Remote syslog forwarding is configured.</strong></td></tr>
+              <tr><th>Description</th><td>Remote logging ensures logs survive if the local system is compromised.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched /var/versa/vnms/data/conf/99-versa.conf for forwarding rules (lines containing @ or @@).</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">local7.*   @10.73.108.218:514</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Go to your Director GUI and proceed to Administration -&gt; Connectors -&gt; then SYSLOG <br></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219290</span>
+            <span class="finding-title">System must not have unnecessary / unauthorized packages (e.g. games)</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219290r879839_rule</td></tr>
+              <tr><th>Result</th><td><strong>No unauthorized packages (games, X server) found.</strong></td></tr>
+              <tr><th>Description</th><td>Unnecessary software increases the attack surface of the system.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;dpkg -l&#x27; and searched for game-related or X server packages.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NONE_FOUND</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Remove unauthorized packages:<br>   sudo apt remove --purge &lt;package_name&gt;<br>2. Review the full package list:  dpkg -l | less</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219320</span>
+            <span class="finding-title">There must be no world-writable files on the system</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219320r879899_rule</td></tr>
+              <tr><th>Result</th><td><strong>Found 1 world-writable file(s).</strong></td></tr>
+              <tr><th>Description</th><td>World-writable files can be modified by any user, leading to privilege escalation.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;find / -xdev -type f -perm -0002&#x27; excluding /proc, /sys, /run and listed up to 20 results.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/var/log/vnms/ipam/netbox.log</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">For each file found:<br>  sudo chmod o-w &lt;filepath&gt;<br>Investigate why the file was world-writable.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219330</span>
+            <span class="finding-title">All files and directories must have a valid owner</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219330r879919_rule</td></tr>
+              <tr><th>Result</th><td><strong>No unowned files found.</strong></td></tr>
+              <tr><th>Description</th><td>Unowned files may have been left by deleted accounts and could pose a risk.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;find / -xdev -nouser&#x27; excluding /proc, /sys, /run.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">(none found)</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">For each file:<br>  sudo chown &lt;appropriate_user&gt;:&lt;group&gt; &lt;filepath&gt;<br>Or remove if the file is no longer needed.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219340</span>
+            <span class="finding-title">Time synchronization service (NTP/chrony/timesyncd) must be configured and active</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219340r879939_rule</td></tr>
+              <tr><th>Result</th><td><strong>Time sync active: ntp</strong></td></tr>
+              <tr><th>Description</th><td>Accurate time is critical for audit log correlation and authentication protocols.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Checked systemctl is-active for chrony, ntp, and systemd-timesyncd.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">chrony: inactive
+inactive
+ntp: active
+systemd-timesyncd: inactive
+inactive</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Install chrony:  sudo apt install chrony<br>2. Configure servers in /etc/chrony/chrony.conf<br>3. sudo systemctl enable chrony &amp;&amp; sudo systemctl start chrony</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219331</span>
+            <span class="finding-title">Must have an NTP server</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219331_r879959_rule</td></tr>
+              <tr><th>Result</th><td><strong>An NTP server was found in /etc/ntp/ntp/servers.</strong></td></tr>
+              <tr><th>Description</th><td>DISA requires NTP with iburst and it must check every 24 hours.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">1. Searched &#x27;/etc/ntp/ntp.servers&#x27; for a server value.<br></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">server tick.usno.navy.mil iburst version 4</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Login into Director GUI.<br>2. Browse to Administration -&gt; System -&gt; NTP -&gt; Server<br>3. Enter a FQDN for an authoritative NTP server with key.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">V-219350</span>
+            <span class="finding-title">USB mass storage kernel module must be disabled</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219350r879959_rule</td></tr>
+              <tr><th>Result</th><td><strong>USB storage module is disabled in modprobe.</strong></td></tr>
+              <tr><th>Description</th><td>USB storage devices can be used to exfiltrate data or introduce malware.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">1. Searched /etc/modprobe.d/ for &#x27;install usb-storage /bin/true&#x27;.<br>2. Checked &#x27;lsmod&#x27; to see if usb_storage is currently loaded.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">modprobe config: /etc/modprobe.d/stig.conf:install usb-storage /bin/false
+lsmod: NOT_LOADED</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. echo &#x27;install usb-storage /bin/true&#x27; | sudo tee /etc/modprobe.d/disable-usb-storage.conf<br>2. echo &#x27;blacklist usb-storage&#x27; | sudo tee -a /etc/modprobe.d/blacklist.conf<br>3. If module is loaded:  sudo modprobe -r usb_storage</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">UBTU-18-010402</span>
+            <span class="finding-title">Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219216r853449_rule</td></tr>
+              <tr><th>Result</th><td><strong>TMOUT is set to 900 seconds.</strong></td></tr>
+              <tr><th>Description</th><td>The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">TMOUT=900
+ readonly TMOUT
+ export TMOUT</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;TMOUT=900&#x27; and &#x27;readonly TMOUT; export TMOUT&#x27; to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030402</span>
+            <span class="finding-title">Ubuntu 18.04 system commands must be group-owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219225r853458_rule</td></tr>
+              <tr><th>Result</th><td><strong>Commands not group-owned by root:
+/usr/bin/curl
+/usr/bin/expiry
+/usr/bin/python2.7
+/usr/bin/mtr
+/usr/bin/dotlockfile
+/usr/bin/perl
+/usr/bin/mlocate
+/usr/bin/ssh-agent
+/usr/bin/python3.8
+/usr/bin/netkit-ftp
+/usr/bin/at
+/usr/bin/bsd-write
+/usr/bin/wget
+/usr/bin/perl5.26.1
+/usr/bin/gawk
+/usr/bin/crontab
+/usr/bin/vim.basic
+/usr/bin/python3.6m
+/usr/bin/python3.6
+/usr/bin/telnet.netkit</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/usr/bin/curl
+/usr/bin/expiry
+/usr/bin/python2.7
+/usr/bin/mtr
+/usr/bin/dotlockfile
+/usr/bin/perl
+/usr/bin/mlocate
+/usr/bin/ssh-agent
+/usr/bin/python3.8
+/usr/bin/netkit-ftp
+/usr/bin/at
+/usr/bin/bsd-write
+/usr/bin/wget
+/usr/bin/perl5.26.1
+/usr/bin/gawk
+/usr/bin/crontab
+/usr/bin/vim.basic
+/usr/bin/python3.6m
+/usr/bin/python3.6
+/usr/bin/telnet.netkit</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo find /usr/bin /usr/sbin ! -group root -exec chgrp root {} \;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030100</span>
+            <span class="finding-title">Ubuntu 18.04 must configure SSH ClientAliveInterval to 600 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219214r853447_rule</td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveInterval is 300 seconds.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;ClientAliveInterval 600&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-010415</span>
+            <span class="finding-title">Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219215r853448_rule</td></tr>
+              <tr><th>Result</th><td><strong>ClientAliveCountMax is 1.</strong></td></tr>
+              <tr><th>Description</th><td>The Ubuntu operating system must immediately terminate all network connections associated with SSH traffic after a period of inactivity</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">grep -i &#x27;^ClientAliveCountMax&#x27; /etc/ssh/sshd_config</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;ClientAliveCountMax 1&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030200</span>
+            <span class="finding-title">Ubuntu 18.04 must not allow SSH X11 forwarding</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219217r853450_rule</td></tr>
+              <tr><th>Result</th><td><strong>X11Forwarding is disabled.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">X11Forwarding no</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;X11Forwarding no&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030201</span>
+            <span class="finding-title">Ubuntu 18.04 SSH must not allow PermitUserEnvironment</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219218r853451_rule</td></tr>
+              <tr><th>Result</th><td><strong>PermitUserEnvironment is disabled.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;PermitUserEnvironment no&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030202</span>
+            <span class="finding-title">Ubuntu 18.04 SSH must be configured to use PAM (UsePAM yes)</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219219r853452_rule</td></tr>
+              <tr><th>Result</th><td><strong>SSH UsePAM is enabled.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">UsePAM yes</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;UsePAM yes&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030203</span>
+            <span class="finding-title">Ubuntu 18.04 SSH must set LogLevel to INFO or VERBOSE</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219220r853453_rule</td></tr>
+              <tr><th>Result</th><td><strong>LogLevel not set (defaults to INFO).</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;LogLevel VERBOSE&#x27; in /etc/ssh/sshd_config.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030300</span>
+            <span class="finding-title">Ubuntu 18.04 must use SHA-512 for password hashing</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219221r853454_rule</td></tr>
+              <tr><th>Result</th><td><strong>Password hashing: ENCRYPT_METHOD SHA512</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">ENCRYPT_METHOD SHA512</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;ENCRYPT_METHOD SHA512&#x27; in /etc/login.defs.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030301</span>
+            <span class="finding-title">Ubuntu 18.04 PAM must be configured to use SHA-512 hashing</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219222r853455_rule</td></tr>
+              <tr><th>Result</th><td><strong>PAM uses SHA-512: password	[success=1 default=ignore]	pam_unix.so obscure  try_first_pass sha512 remember=5</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">password	[success=1 default=ignore]	pam_unix.so obscure  try_first_pass sha512 remember=5</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Ensure pam_unix.so includes &#x27;sha512&#x27; in /etc/pam.d/common-password.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030401</span>
+            <span class="finding-title">Ubuntu 18.04 system commands must be owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219224r853457_rule</td></tr>
+              <tr><th>Result</th><td><strong>Commands not owned by root:
+/usr/bin/at</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/usr/bin/at</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo find /usr/bin /usr/sbin ! -user root -exec chown root {} \;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030500</span>
+            <span class="finding-title">Ubuntu 18.04 library files must have mode 755 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219226r853459_rule</td></tr>
+              <tr><th>Result</th><td><strong>42 library file(s) with group/other write:
+/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/.libgcrypt.so.20.hmac
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/ipsec/.libcharon.so.0.0.0.hmac
+/usr/lib/ipsec/.pool.hmac
+/usr/lib/ipsec/.ikev2-kdf-selftest.hmac
+/usr/lib/ipsec/.scepclient.hmac
+/usr/lib/ipsec/plugins/.libstro</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/.libgcrypt.so.20.hmac
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/ipsec/.libcharon.so.0.0.0.hmac
+/usr/lib/ipsec/.pool.hmac
+/usr/lib/ipsec/.ikev2-kdf-selftest.hmac
+/usr/lib/ipsec/.scepclient.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-fips-prf.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-sshkey.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pkcs8.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-socket-default.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pkcs1.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-resolve.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-updown.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-pem.so.hmac
+/usr/lib/ipsec/plugins/.libstrongswan-openssl.so.hmac</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib -perm /022 -type f -exec chmod 755 {} \;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030501</span>
+            <span class="finding-title">Ubuntu 18.04 library files must be owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219227r853460_rule</td></tr>
+              <tr><th>Result</th><td><strong>Library files not owned by root:
+/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib ! -user root -type f -exec chown root {} \;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030502</span>
+            <span class="finding-title">Ubuntu 18.04 library files must be group-owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219228r853461_rule</td></tr>
+              <tr><th>Result</th><td><strong>Library files not group-owned by root:
+/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/vlock/modules/nosysrq.so
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/lib/security/pam_tty.so
+/lib/security/pam_tacplus.so
+/lib/security/pam_radius_auth.so
+/lib/security/pam_radius.so
+/lib/x86_64-linux-gnu/libtac.so.2
+/lib/x86_64-linux-gnu/libnss_ato.so.2
+/usr/lib/vlock/modules/nosysrq.so
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo find /lib /usr/lib ! -group root -type f -exec chgrp root {} \;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030600</span>
+            <span class="finding-title">Ubuntu 18.04 cron directories must have mode 700 or more restrictive</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219229r853462_rule</td></tr>
+              <tr><th>Result</th><td><strong>Cron dirs with excessive permissions: /etc/cron.d=0o755, /etc/cron.daily=0o755, /etc/cron.hourly=0o755, /etc/cron.monthly=0o755, /etc/cron.weekly=0o755</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">755</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chmod 700 /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030601</span>
+            <span class="finding-title">Ubuntu 18.04 /etc/crontab must have mode 600 or more restrictive</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219230r853463_rule</td></tr>
+              <tr><th>Result</th><td><strong>/etc/crontab mode: 0o644 (must be ≤ 0600)</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">644</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chmod 600 /etc/crontab</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030700</span>
+            <span class="finding-title">Ubuntu 18.04 audit tools must have mode 755 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219231r853464_rule</td></tr>
+              <tr><th>Result</th><td><strong>All audit tools have mode 755 or less.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chmod 755 /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030701</span>
+            <span class="finding-title">Ubuntu 18.04 audit tools must be owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219232r853465_rule</td></tr>
+              <tr><th>Result</th><td><strong>All audit tools are owned by root.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chown root /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030702</span>
+            <span class="finding-title">Ubuntu 18.04 audit tools must be group-owned by root</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219233r853466_rule</td></tr>
+              <tr><th>Result</th><td><strong>All audit tools are group-owned by root.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chgrp root /usr/sbin/auditctl /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/auditd /usr/sbin/augenrules</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030800</span>
+            <span class="finding-title">Ubuntu 18.04 user home directories must have mode 0750 or less</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219234r853467_rule</td></tr>
+              <tr><th>Result</th><td><strong>All home directories have mode 750 or less.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">/home/vnmshauser
+/home/Administrator
+/home/aaaadmin
+/home/versa
+/home/erik</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chmod 0750 /home/&lt;user&gt; for each offending directory.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030801</span>
+            <span class="finding-title">Ubuntu 18.04 home directories must be owned by their respective users</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219235r853468_rule</td></tr>
+              <tr><th>Result</th><td><strong>All home directories are correctly owned.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">vnmshauser /home/vnmshauser
+Administrator /home/Administrator
+aaaadmin /home/aaaadmin
+versa /home/versa
+erik /home/erik</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chown &lt;user&gt;:&lt;user&gt; /home/&lt;user&gt; for each mismatched directory.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-030900</span>
+            <span class="finding-title">Ubuntu 18.04 must not contain duplicate UIDs</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219236r853469_rule</td></tr>
+              <tr><th>Result</th><td><strong>No duplicate UIDs found.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Correct duplicate UIDs in /etc/passwd.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031001</span>
+            <span class="finding-title">Ubuntu 18.04 must not have files without a valid owner</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219239r853472_rule</td></tr>
+              <tr><th>Result</th><td><strong>No unowned files found.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chown root &lt;file&gt; for each unowned file.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031002</span>
+            <span class="finding-title">Ubuntu 18.04 must not have files without a valid group owner</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219240r853473_rule</td></tr>
+              <tr><th>Result</th><td><strong>No ungrouped files found.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo chgrp root &lt;file&gt; for each ungrouped file.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031100</span>
+            <span class="finding-title">Ubuntu 18.04 must synchronize clocks using an authoritative NTP source</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219241r853474_rule</td></tr>
+              <tr><th>Result</th><td><strong>NTP synchronization is active. Services: inactive
+inactive
+active</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Install and configure chrony or systemd-timesyncd.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031200</span>
+            <span class="finding-title">Ubuntu 18.04 must configure sudo to log all activity</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219242r853475_rule</td></tr>
+              <tr><th>Result</th><td><strong>sudo is not configured to log activity.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">NOT_SET</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;Defaults logfile=&quot;/var/log/sudo.log&quot;&#x27; to /etc/sudoers via visudo.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031201</span>
+            <span class="finding-title">Ubuntu 18.04 must enforce sudo timestamp_timeout</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219243r853476_rule</td></tr>
+              <tr><th>Result</th><td><strong>sudo timestamp_timeout=0 (re-auth every time).</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;Defaults timestamp_timeout=0&#x27; to /etc/sudoers via visudo.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031300</span>
+            <span class="finding-title">Ubuntu 18.04 /tmp must be mounted with noexec</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219244r853477_rule</td></tr>
+              <tr><th>Result</th><td><strong>/tmp is not a separate mount point.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;noexec&#x27; to /tmp mount options in /etc/fstab.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031301</span>
+            <span class="finding-title">Ubuntu 18.04 /tmp must be mounted with nosuid</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219245r853478_rule</td></tr>
+              <tr><th>Result</th><td><strong>/tmp is not a separate mount point.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;nosuid&#x27; to /tmp mount options in /etc/fstab.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031400</span>
+            <span class="finding-title">Ubuntu 18.04 mail services (Postfix) must operate in local-only mode</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219246r853479_rule</td></tr>
+              <tr><th>Result</th><td><strong>Postfix is local-only: inet_interfaces = loopback-only</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Set &#x27;inet_interfaces = loopback-only&#x27; in /etc/postfix/main.cf.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031500</span>
+            <span class="finding-title">Ubuntu 18.04 must have automatic security updates configured</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219247r853480_rule</td></tr>
+              <tr><th>Result</th><td><strong>unattended-upgrades is not installed.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks files that are tested and approved.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding fail">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge fail">FAIL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031600</span>
+            <span class="finding-title">Ubuntu 18.04 must not use NOPASSWD in sudoers</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219248r853481_rule</td></tr>
+              <tr><th>Result</th><td><strong>NOPASSWD entries:
+postgres ALL = NOPASSWD: /bin/systemctl stop versa-postgresql, /bin/systemctl start versa-postgresql, /bin/systemctl restart versa-postgresql, /bin/systemctl reload versa-postgresql</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Remove NOPASSWD entries from /etc/sudoers and /etc/sudoers.d/.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031601</span>
+            <span class="finding-title">Ubuntu 18.04 sudo rules should use NOEXEC to restrict shell escapes</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219249r853482_rule</td></tr>
+              <tr><th>Result</th><td><strong>No NOEXEC directives — review if shell escapes possible via sudo.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">Add &#x27;Defaults noexec&#x27; to /etc/sudoers or NOEXEC to individual rules.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catiii">CAT III</span>
+            <span class="vuln-id">UBTU-18-031700</span>
+            <span class="finding-title">Ubuntu 18.04 must have tmux or equivalent for session locking</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>SV-219250r853483_rule</td></tr>
+              <tr><th>Result</th><td><strong>vlock is installed for session locking.</strong></td></tr>
+              <tr><th>Description</th><td></td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method"></td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence"><em>No evidence collected</em></pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">sudo apt install tmux; configure in /etc/tmux.conf.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">VERSA-001</span>
+            <span class="finding-title">Versa Director core services must be running</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>VERSA-SVC-001</td></tr>
+              <tr><th>Result</th><td><strong>Versa services are running.</strong></td></tr>
+              <tr><th>Description</th><td>The Versa Director appliance should have its management services active.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Listed running services and filtered for versa/vnms/director keywords.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">versa-hamgr.service        loaded active running Versa Director Cluster Manager                      
+versa-ncs.service          loaded active running NCS                                                 
+versa-netbox.service       loaded active running IPAM_NETBOX                                         
+versa-redis.service        loaded active running Redis                                               
+versa-spring-boot.service  loaded active running Spring Boot                                         
+versa-tomcat.service       loaded active running Apache Tomcat                                       
+versa-websockify.service   loaded active running Websockify</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Check Versa logs:  journalctl -u versa-*<br>2. Restart:  sudo systemctl restart versa-director*</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding manual">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge manual">MANUAL</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">VERSA-002</span>
+            <span class="finding-title">Only authorized network services should be listening</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>VERSA-PORT-001</td></tr>
+              <tr><th>Result</th><td><strong>Review the listening services list for unauthorized ports.</strong></td></tr>
+              <tr><th>Description</th><td>Unnecessary listening services expand the attack surface.</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Ran &#x27;ss -tlnp&#x27; to list all TCP listening sockets with process info.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">State    Recv-Q    Send-Q        Local Address:Port        Peer Address:Port    
+LISTEN   0         5                 127.0.0.1:9181             0.0.0.0:*       
+LISTEN   0         100                 0.0.0.0:9182             0.0.0.0:*       
+LISTEN   0         100                 0.0.0.0:9183             0.0.0.0:*       
+LISTEN   0         2048              127.0.0.1:8000             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:6080             0.0.0.0:*       
+LISTEN   0         25                127.0.0.1:514              0.0.0.0:*       
+LISTEN   0         64                127.0.0.1:2024             0.0.0.0:*       
+LISTEN   0         128               127.0.0.1:4200             0.0.0.0:*       
+LISTEN   0         511               127.0.0.1:6379             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:8080             0.0.0.0:*       
+LISTEN   0         128               127.0.0.1:4949             0.0.0.0:*       
+LISTEN   0         128                 0.0.0.0:22               0.0.0.0:*       
+LISTEN   0         25                  0.0.0.0:4566             0.0.0.0:*       
+LISTEN   0         1054                0.0.0.0:5432             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:25               0.0.0.0:*       
+LISTEN   0         5                   0.0.0.0:4570             0.0.0.0:*       
+LISTEN   0         100               127.0.0.1:8443             0.0.0.0:*       
+LISTEN   0         128                    [::]:22                  [::]:*       
+LISTEN   0         1054                   [::]:5432                [::]:*</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Review each listening port against the Versa deployment guide.<br>2. Disable unnecessary services:  sudo systemctl disable &lt;service&gt;</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="finding pass">
+          <div class="finding-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="badge pass">PASS</span>
+            <span class="sev-badge catii">CAT II</span>
+            <span class="vuln-id">VERSA-003</span>
+            <span class="finding-title">Versa Director web interface must require TLS 1.2 or higher</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="finding-body">
+            <table class="detail-table">
+              <tr><th>Rule ID</th><td>VERSA-TLS-001</td></tr>
+              <tr><th>Result</th><td><strong>TLS configuration appears to enforce 1.2+.</strong></td></tr>
+              <tr><th>Description</th><td>TLS versions below 1.2 have known vulnerabilities (POODLE, BEAST, etc.).</td></tr>
+              <tr><th>How It Was Tested</th><td class="check-method">Searched common Versa/Tomcat/Nginx config paths for TLS protocol settings.</td></tr>
+              <tr><th>Evidence Collected</th><td><pre class="evidence">Binary file /opt/versa/lib/openssl/libssl.so.1.1 matches
+Binary file /opt/versa/mips_binaries/libmip_core.so matches
+Binary file /opt/versa/vnms/spring-boot/spring-boot.jar matches
+        &lt;constructor-arg name=&quot;protocols&quot; value=&quot;${server.ssl.enabled-protocols:TLSv1.2}&quot; /&gt;
+Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/versa/vnms/ui/rest/SIABConnectionRestClient.class matches
+Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/versa/vnms/ui/CamelProxy/VNFProxyHttpClientConfigurer.class matches
+Binary file /opt/versa/vnms/apache-tomcat/webapps/versa/WEB-INF/classes/com/versa/vnms/ui/CamelProxy/SSLConfig.class matches
+          &quot;content&quot;: &quot;HTTP/1.1 200 OK\n{\n \t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/config/1.0\&quot;,\n \t\&quot;devices\&quot;: {\n \t\t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/ncs\&quot;,\n \t\t\&quot;device\&quot;: {\n \t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;,\n \t\t\t\&quot;config\&quot;: {\n \t\t\t\t\&quot;confdConfig\&quot;: {\n \t\t\t\t\t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/confd_dyncfg/1.0\&quot;,\n \t\t\t\t\t\&quot;notifications\&quot;: {\n \t\t\t\t\t\t\&quot;eventStreams\&quot;: {\n \t\t\t\t\t\t\t\&quot;stream\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;oam\&quot;,\n \t\t\t\t\t\t\t\t\&quot;description\&quot;: \&quot;Versa notifications\&quot;,\n \t\t\t\t\t\t\t\t\&quot;replaySupport\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;hideGroup\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;debug\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;full\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;hidemib-group\&quot;\n \t\t\t\t\t}],\n \t\t\t\t\t\&quot;logs\&quot;: {\n \t\t\t\t\t\t\&quot;syslogConfig\&quot;: {\n \t\t\t\t\t\t\t\&quot;facility\&quot;: \&quot;daemon\&quot;,\n \t\t\t\t\t\t\t\&quot;udp\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\t\t\&quot;host\&quot;: \&quot;syslogsrv.example.com\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;514\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;confdLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;confd.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;developerLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;devel.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;auditLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;audit.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;netconfLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;netconf.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;snmpLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;snmp.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;webuiAccessLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;dir\&quot;: \&quot;confd\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;netconfTraceLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\t\&quot;filename\&quot;: \&quot;netconf.trace.log\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;errorLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;filename\&quot;: \&quot;confderr.log\&quot;,\n \t\t\t\t\t\t\t\&quot;maxSize\&quot;: \&quot;S10M\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\&quot;algorithms\&quot;: {\n \t\t\t\t\t\t\t\&quot;mac\&quot;: \&quot;hmac-sha2-256,hmac-sha2-512\&quot;,\n \t\t\t\t\t\t\t\&quot;encryption\&quot;: \&quot;aes128-ctr,aes192-ctr,aes256-ctr\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;clientAliveInterval\&quot;: \&quot;PT30S\&quot;,\n \t\t\t\t\t\t\&quot;clientAliveCountMax\&quot;: \&quot;3\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;cli\&quot;: {\n \t\t\t\t\t\t\&quot;bannerFile\&quot;: \&quot;cbanner\&quot;,\n \t\t\t\t\t\t\&quot;prompt1\&quot;: \&quot;\\u@\\h-cli\\M&gt; \&quot;,\n \t\t\t\t\t\t\&quot;prompt2\&quot;: \&quot;\\u@\\h-cli\\M% \&quot;,\n \t\t\t\t\t\t\&quot;cStylePromptInJStyle\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\&quot;autoWizard\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;historyRemoveDuplicates\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;webui\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\&quot;docroot\&quot;: \&quot;docroot\&quot;,\n \t\t\t\t\t\t\&quot;transport\&quot;: {\n \t\t\t\t\t\t\t\&quot;tcp\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t\t},\n \t\t\t\t\t\t\t\&quot;ssl\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;0.0.0.0\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;8443\&quot;,\n \t\t\t\t\t\t\t\t\&quot;extraIpPorts\&quot;: \&quot;:::8443\&quot;,\n \t\t\t\t\t\t\t\t\&quot;keyFile\&quot;: \&quot;vshost.key\&quot;,\n \t\t\t\t\t\t\t\t\&quot;certFile\&quot;: \&quot;vshost.crt\&quot;,\n \t\t\t\t\t\t\t\t\&quot;caCertFile\&quot;: \&quot;ca.crt\&quot;,\n \t\t\t\t\t\t\t\t\&quot;verify\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ciphers\&quot;: \&quot;DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256\&quot;,\n \t\t\t\t\t\t\t\t\&quot;protocols\&quot;: \&quot;tlsv1.1 tlsv1.2\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;cgi\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;rest\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;netconf\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\&quot;transport\&quot;: {\n \t\t\t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;0.0.0.0\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;2022\&quot;,\n \t\t\t\t\t\t\t\t\&quot;extraIpPorts\&quot;: \&quot;:::2022\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;idleTimeout\&quot;: \&quot;PT30S\&quot;,\n \t\t\t\t\t\t\&quot;writeTimeout\&quot;: \&quot;PT60S\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;snmp\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://tail-f.com/ns/snmp\&quot;,\n \t\t\t\t\t\&quot;agent\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\&quot;ip\&quot;: \&quot;127.0.0.1\&quot;,\n \t\t\t\t\t\t\&quot;udp-port\&quot;: \&quot;161\&quot;,\n \t\t\t\t\t\t\&quot;extra-listen\&quot;: {\n \t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;::1\&quot;,\n \t\t\t\t\t\t\t\&quot;udp-port\&quot;: \&quot;161\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;version\&quot;: {\n \t\t\t\t\t\t\t\&quot;v1\&quot;: null,\n \t\t\t\t\t\t\t\&quot;v2c\&quot;: null\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;max-message-size\&quot;: \&quot;50000\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;system\&quot;: {\n \t\t\t\t\t\t\&quot;contact\&quot;: null,\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;,\n \t\t\t\t\t\t\&quot;location\&quot;: null\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;notify\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v1_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v1_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v2_inform\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v2_inform\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;inform\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v2_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v2_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v3_inform\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v3_inform\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;inform\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v3_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v3_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}],\n \t\t\t\t\t\&quot;vacm\&quot;: {\n \t\t\t\t\t\t\&quot;view\&quot;: {\n \t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;internet\&quot;,\n \t\t\t\t\t\t\t\&quot;subtree\&quot;: [{\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.2\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.3\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.3.6.1\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}]\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;redundancy\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/ha\&quot;,\n \t\t\t\t\t\&quot;intra-chassis\&quot;: {\n \t\t\t\t\t\t\&quot;control-node\&quot;: {\n \t\t\t\t\t\t\t\&quot;preferred-master\&quot;: \&quot;vcn0\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;inter-chassis\&quot;: {\n \t\t\t\t\t\t\&quot;preferred-master\&quot;: \&quot;local-appliance\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;interfaces\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/interfaces\&quot;,\n \t\t\t\t\t\&quot;vni\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;vni-0/0\&quot;,\n \t\t\t\t\t\t\&quot;description\&quot;: \&quot;Ten101 Configured from Director\&quot;,\n \t\t\t\t\t\t\&quot;unit\&quot;: {\n \t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\&quot;vlan-id\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\&quot;enable\&quot;: \&quot;true\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;networks\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/network\&quot;,\n \t\t\t\t\t\&quot;network\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Ten101\&quot;,\n \t\t\t\t\t\t\&quot;interfaces\&quot;: \&quot;vni-0/0.2\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;orgs\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/org\&quot;,\n \t\t\t\t\t\&quot;org\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Versa1\&quot;,\n \t\t\t\t\t\t\&quot;uuid\&quot;: \&quot;424aeb7c-a098-4c39-91ac-10a069e87cf2\&quot;,\n \t\t\t\t\t\t\&quot;appliance-owner\&quot;: null,\n \t\t\t\t\t\t\&quot;traffic-identification\&quot;: {\n \t\t\t\t\t\t\t\&quot;using-networks\&quot;: \&quot;Ten1012\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;available-service-node-groups\&quot;: {\n \t\t\t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\t\t\&quot;#text\&quot;: \&quot;default-sng\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;org-services\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Versa1\&quot;,\n \t\t\t\t\t\t\&quot;objects\&quot;: {\n \t\t\t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/security\&quot;,\n \t\t\t\t\t\t\t\&quot;zones\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;zone\&quot;: [{\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;trust\&quot;\n \t\t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;untrust\&quot;\n \t\t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;host\&quot;\n \t\t\t\t\t\t\t\t}]\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;predefined\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/predefined\&quot;,\n \t\t\t\t\t\&quot;global\&quot;: {\n \t\t\t\t\t\t\&quot;init\&quot;: \&quot;true\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;elastic-policies\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\&quot;elastic-policy\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;epolicy-autoscale-disabled\&quot;,\n \t\t\t\t\t\t\&quot;description\&quot;: \&quot;elasticity template\&quot;,\n \t\t\t\t\t\t\&quot;minimum-vsns\&quot;: \&quot;1\&quot;,\n \t\t\t\t\t\t\&quot;maximum-vsns\&quot;: \&quot;1\&quot;,\n \t\t\t\t\t\t\&quot;actions\&quot;: {\n \t\t\t\t\t\t\t\&quot;auto-scale\&quot;: \&quot;disabled\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;service-node-groups\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\&quot;service-node-group\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;default-sng\&quot;,\n \t\t\t\t\t\t\&quot;id\&quot;: \&quot;0\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;internal\&quot;,\n \t\t\t\t\t\t\&quot;services\&quot;: [\&quot;adc\&quot;, \&quot;cgnat\&quot;, \&quot;stateful-firewall\&quot;, \&quot;nextgen-firewall\&quot;, \&quot;ipsec\&quot;, \&quot;tdf\&quot;, \&quot;sdwan\&quot;],\n \t\t\t\t\t\t\&quot;elastic-policy\&quot;: \&quot;epolicy-autoscale-disabled\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;system\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/system\&quot;,\n \t\t\t\t\t\&quot;identification\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;subjugate\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;time-zone\&quot;: \&quot;America/Los_Angeles\&quot;,\n \t\t\t\t\t\&quot;users\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;admin\&quot;,\n \t\t\t\t\t\t\&quot;login\&quot;: \&quot;shell\&quot;,\n \t\t\t\t\t\t\&quot;role\&quot;: \&quot;admin\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;versa\&quot;,\n \t\t\t\t\t\t\&quot;login\&quot;: \&quot;shell\&quot;,\n \t\t\t\t\t\t\&quot;role\&quot;: \&quot;admin\&quot;\n \t\t\t\t\t}]\n \t\t\t\t}\n \t\t\t}\n \t\t}\n \t}\n }&quot;,
+          &quot;content&quot;: &quot;HTTP/1.1 200 OK\n{\n \t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/config/1.0\&quot;,\n \t\&quot;devices\&quot;: {\n \t\t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/ncs\&quot;,\n \t\t\&quot;device\&quot;: {\n \t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;,\n \t\t\t\&quot;config\&quot;: {\n \t\t\t\t\&quot;confdConfig\&quot;: {\n \t\t\t\t\t\&quot;xmlns\&quot;: \&quot;http://tail-f.com/ns/confd_dyncfg/1.0\&quot;,\n \t\t\t\t\t\&quot;notifications\&quot;: {\n \t\t\t\t\t\t\&quot;eventStreams\&quot;: {\n \t\t\t\t\t\t\t\&quot;stream\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;oam\&quot;,\n \t\t\t\t\t\t\t\t\&quot;description\&quot;: \&quot;Versa notifications\&quot;,\n \t\t\t\t\t\t\t\t\&quot;replaySupport\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;hideGroup\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;debug\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;full\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;hidemib-group\&quot;\n \t\t\t\t\t}],\n \t\t\t\t\t\&quot;logs\&quot;: {\n \t\t\t\t\t\t\&quot;syslogConfig\&quot;: {\n \t\t\t\t\t\t\t\&quot;facility\&quot;: \&quot;daemon\&quot;,\n \t\t\t\t\t\t\t\&quot;udp\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\t\t\&quot;host\&quot;: \&quot;syslogsrv.example.com\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;514\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;confdLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;confd.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;developerLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;devel.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;auditLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;audit.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;netconfLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;netconf.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;snmpLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;file\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;snmp.log\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;webuiAccessLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;dir\&quot;: \&quot;confd\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;netconfTraceLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\t\&quot;filename\&quot;: \&quot;netconf.trace.log\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;errorLog\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\&quot;filename\&quot;: \&quot;confderr.log\&quot;,\n \t\t\t\t\t\t\t\&quot;maxSize\&quot;: \&quot;S10M\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\&quot;algorithms\&quot;: {\n \t\t\t\t\t\t\t\&quot;mac\&quot;: \&quot;hmac-sha2-256,hmac-sha2-512\&quot;,\n \t\t\t\t\t\t\t\&quot;encryption\&quot;: \&quot;aes128-ctr,aes192-ctr,aes256-ctr\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;clientAliveInterval\&quot;: \&quot;PT30S\&quot;,\n \t\t\t\t\t\t\&quot;clientAliveCountMax\&quot;: \&quot;3\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;cli\&quot;: {\n \t\t\t\t\t\t\&quot;bannerFile\&quot;: \&quot;cbanner\&quot;,\n \t\t\t\t\t\t\&quot;prompt1\&quot;: \&quot;\\u@\\h-cli\\M&gt; \&quot;,\n \t\t\t\t\t\t\&quot;prompt2\&quot;: \&quot;\\u@\\h-cli\\M% \&quot;,\n \t\t\t\t\t\t\&quot;cStylePromptInJStyle\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\&quot;autoWizard\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;historyRemoveDuplicates\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;webui\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\&quot;docroot\&quot;: \&quot;docroot\&quot;,\n \t\t\t\t\t\t\&quot;transport\&quot;: {\n \t\t\t\t\t\t\t\&quot;tcp\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t\t},\n \t\t\t\t\t\t\t\&quot;ssl\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;0.0.0.0\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;8443\&quot;,\n \t\t\t\t\t\t\t\t\&quot;extraIpPorts\&quot;: \&quot;:::8443\&quot;,\n \t\t\t\t\t\t\t\t\&quot;keyFile\&quot;: \&quot;vshost.key\&quot;,\n \t\t\t\t\t\t\t\t\&quot;certFile\&quot;: \&quot;vshost.crt\&quot;,\n \t\t\t\t\t\t\t\t\&quot;caCertFile\&quot;: \&quot;ca.crt\&quot;,\n \t\t\t\t\t\t\t\t\&quot;verify\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ciphers\&quot;: \&quot;DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256\&quot;,\n \t\t\t\t\t\t\t\t\&quot;protocols\&quot;: \&quot;tlsv1.1 tlsv1.2\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;cgi\&quot;: {\n \t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;rest\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;netconf\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\&quot;transport\&quot;: {\n \t\t\t\t\t\t\t\&quot;ssh\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;,\n \t\t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;0.0.0.0\&quot;,\n \t\t\t\t\t\t\t\t\&quot;port\&quot;: \&quot;2022\&quot;,\n \t\t\t\t\t\t\t\t\&quot;extraIpPorts\&quot;: \&quot;:::2022\&quot;\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;idleTimeout\&quot;: \&quot;PT30S\&quot;,\n \t\t\t\t\t\t\&quot;writeTimeout\&quot;: \&quot;PT60S\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;snmp\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://tail-f.com/ns/snmp\&quot;,\n \t\t\t\t\t\&quot;agent\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;false\&quot;,\n \t\t\t\t\t\t\&quot;ip\&quot;: \&quot;127.0.0.1\&quot;,\n \t\t\t\t\t\t\&quot;udp-port\&quot;: \&quot;161\&quot;,\n \t\t\t\t\t\t\&quot;extra-listen\&quot;: {\n \t\t\t\t\t\t\t\&quot;ip\&quot;: \&quot;::1\&quot;,\n \t\t\t\t\t\t\t\&quot;udp-port\&quot;: \&quot;161\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;version\&quot;: {\n \t\t\t\t\t\t\t\&quot;v1\&quot;: null,\n \t\t\t\t\t\t\t\&quot;v2c\&quot;: null\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;max-message-size\&quot;: \&quot;50000\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;system\&quot;: {\n \t\t\t\t\t\t\&quot;contact\&quot;: null,\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;,\n \t\t\t\t\t\t\&quot;location\&quot;: null\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;notify\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v1_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v1_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v2_inform\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v2_inform\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;inform\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v2_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v2_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v3_inform\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v3_inform\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;inform\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;std_v3_trap\&quot;,\n \t\t\t\t\t\t\&quot;tag\&quot;: \&quot;std_v3_trap\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;trap\&quot;\n \t\t\t\t\t}],\n \t\t\t\t\t\&quot;vacm\&quot;: {\n \t\t\t\t\t\t\&quot;view\&quot;: {\n \t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;internet\&quot;,\n \t\t\t\t\t\t\t\&quot;subtree\&quot;: [{\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.2\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.3\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\&quot;oids\&quot;: \&quot;1.3.6.1\&quot;,\n \t\t\t\t\t\t\t\t\&quot;included\&quot;: null\n \t\t\t\t\t\t\t}]\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;redundancy\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/ha\&quot;,\n \t\t\t\t\t\&quot;intra-chassis\&quot;: {\n \t\t\t\t\t\t\&quot;control-node\&quot;: {\n \t\t\t\t\t\t\t\&quot;preferred-master\&quot;: \&quot;vcn0\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;inter-chassis\&quot;: {\n \t\t\t\t\t\t\&quot;preferred-master\&quot;: \&quot;local-appliance\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;interfaces\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/interfaces\&quot;,\n \t\t\t\t\t\&quot;vni\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;vni-0/0\&quot;,\n \t\t\t\t\t\t\&quot;description\&quot;: \&quot;Ten101 Configured from Director\&quot;,\n \t\t\t\t\t\t\&quot;unit\&quot;: {\n \t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\&quot;vlan-id\&quot;: \&quot;2\&quot;,\n \t\t\t\t\t\t\t\&quot;enable\&quot;: \&quot;true\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;networks\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/network\&quot;,\n \t\t\t\t\t\&quot;network\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Ten101\&quot;,\n \t\t\t\t\t\t\&quot;interfaces\&quot;: \&quot;vni-0/0.2\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;orgs\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/org\&quot;,\n \t\t\t\t\t\&quot;org\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Versa1\&quot;,\n \t\t\t\t\t\t\&quot;uuid\&quot;: \&quot;424aeb7c-a098-4c39-91ac-10a069e87cf2\&quot;,\n \t\t\t\t\t\t\&quot;appliance-owner\&quot;: null,\n \t\t\t\t\t\t\&quot;traffic-identification\&quot;: {\n \t\t\t\t\t\t\t\&quot;using-networks\&quot;: \&quot;Ten1012\&quot;\n \t\t\t\t\t\t},\n \t\t\t\t\t\t\&quot;available-service-node-groups\&quot;: {\n \t\t\t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\t\t\&quot;#text\&quot;: \&quot;default-sng\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;org-services\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;Versa1\&quot;,\n \t\t\t\t\t\t\&quot;objects\&quot;: {\n \t\t\t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/security\&quot;,\n \t\t\t\t\t\t\t\&quot;zones\&quot;: {\n \t\t\t\t\t\t\t\t\&quot;zone\&quot;: [{\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;trust\&quot;\n \t\t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;untrust\&quot;\n \t\t\t\t\t\t\t\t}, {\n \t\t\t\t\t\t\t\t\t\&quot;name\&quot;: \&quot;host\&quot;\n \t\t\t\t\t\t\t\t}]\n \t\t\t\t\t\t\t}\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;predefined\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/predefined\&quot;,\n \t\t\t\t\t\&quot;global\&quot;: {\n \t\t\t\t\t\t\&quot;init\&quot;: \&quot;true\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;elastic-policies\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\&quot;elastic-policy\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;epolicy-autoscale-disabled\&quot;,\n \t\t\t\t\t\t\&quot;description\&quot;: \&quot;elasticity template\&quot;,\n \t\t\t\t\t\t\&quot;minimum-vsns\&quot;: \&quot;1\&quot;,\n \t\t\t\t\t\t\&quot;maximum-vsns\&quot;: \&quot;1\&quot;,\n \t\t\t\t\t\t\&quot;actions\&quot;: {\n \t\t\t\t\t\t\t\&quot;auto-scale\&quot;: \&quot;disabled\&quot;\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;service-node-groups\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/sng\&quot;,\n \t\t\t\t\t\&quot;service-node-group\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;default-sng\&quot;,\n \t\t\t\t\t\t\&quot;id\&quot;: \&quot;0\&quot;,\n \t\t\t\t\t\t\&quot;type\&quot;: \&quot;internal\&quot;,\n \t\t\t\t\t\t\&quot;services\&quot;: [\&quot;adc\&quot;, \&quot;cgnat\&quot;, \&quot;stateful-firewall\&quot;, \&quot;nextgen-firewall\&quot;, \&quot;ipsec\&quot;, \&quot;tdf\&quot;, \&quot;sdwan\&quot;],\n \t\t\t\t\t\t\&quot;elastic-policy\&quot;: \&quot;epolicy-autoscale-disabled\&quot;\n \t\t\t\t\t}\n \t\t\t\t},\n \t\t\t\t\&quot;system\&quot;: {\n \t\t\t\t\t\&quot;@xmlns\&quot;: \&quot;http://www.versa-networks.com/system\&quot;,\n \t\t\t\t\t\&quot;identification\&quot;: {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;TestVNF\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;subjugate\&quot;: {\n \t\t\t\t\t\t\&quot;enabled\&quot;: \&quot;true\&quot;\n \t\t\t\t\t},\n \t\t\t\t\t\&quot;time-zone\&quot;: \&quot;America/Los_Angeles\&quot;,\n \t\t\t\t\t\&quot;users\&quot;: [{\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;admin\&quot;,\n \t\t\t\t\t\t\&quot;login\&quot;: \&quot;shell\&quot;,\n \t\t\t\t\t\t\&quot;role\&quot;: \&quot;admin\&quot;\n \t\t\t\t\t}, {\n \t\t\t\t\t\t\&quot;name\&quot;: \&quot;versa\&quot;,\n \t\t\t\t\t\t\&quot;login\&quot;: \&quot;shell\&quot;,\n \t\t\t\t\t\t\&quot;role\&quot;: \&quot;admin\&quot;\n \t\t\t\t\t}]\n \t\t\t\t}\n \t\t\t}\n \t\t}\n \t}\n }&quot;,
+#offending algo failing hand-shake for TLSv1.2 so disabling explicitly</pre></td></tr>
+              <tr><th>Remediation Steps</th><td class="fix">1. Locate the web server config (e.g. /opt/versa/*/server.xml or nginx.conf).<br>2. Set minimum TLS version to 1.2.<br>   Nginx: ssl_protocols TLSv1.2 TLSv1.3;<br>   Tomcat: sslEnabledProtocols=&#x27;TLSv1.2,TLSv1.3&#x27;<br>3. Restart the web server.</td></tr>
+            </table>
+          </div>
+        </div>
+</div>
+
+<!-- Footer -->
+<div class="report-footer">
+  Generated by Versa Director STIG Compliance Checker &middot; Ubuntu 18.04 LTS STIG V2R13+ &middot; 2026-05-28T04:03:41.395525+00:00
+</div>
+
+<script>
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    document.querySelectorAll('.finding').forEach(el => {
+      if (f === 'all') { el.style.display = ''; return; }
+      if (f === 'cati') {
+        el.style.display = el.querySelector('.sev-badge.cati') ? '' : 'none';
+        return;
+      }
+      if (f === 'catii') {
+        el.style.display = el.querySelector('.sev-badge.catii') ? '' : 'none';
+        return;
+      }
+       if (f === 'catiii') {
+        el.style.display = el.querySelector('.sev-badge.catiii') ? '' : 'none';
+        return;
+      }
+      el.style.display = el.classList.contains(f) ? '' : 'none';
+    });
+  });
+});
+</script>
+</body>
+</html>
