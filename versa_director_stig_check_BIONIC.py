@@ -140,35 +140,27 @@ class RemoteExecutor:
 # ---------------------------------------------------------------------------
 
 
-def check_is_versa_director(exe: RemoteExecutor):
-    command = 'echo -e "show system package-info" | ncs_cli'
-    _, stdout, _ = ssh_client.exec_command(command)
-    output = stdout.read().decode()
- 
-    if "versa-director" in output:
-        print("CHECK PASSED: This is a Versa Director node.")
-        return True
-    else:
-        print("CHECK FAILED: This is NOT a Versa Director node.")
-        sys.exit(0)
-        return False
+
     
-def check_v219151_check_if_Director(exe: RemoteExecutor) -> Finding:
+def check_if_Director(exe: RemoteExecutor) -> Finding:
     """Must be a Director"""
     f = Finding(
-        "V-219151", "SV-219151r879589_rule", "CAT I",
-        "SSH must not allow authentication with empty passwords",
-        description="Must be a Director",
+        "V-99999", "SV-999999_rule", "CAT I",
+        "Must be a Director",
+        description="We check to ensure that this is being run on a Director",
         check_method="Must be a Director ",
-        fix="1. Must be a Director")
-    rc, out, _ = exe.run("echo -e 'show system package-info' | ncs_cli")
+        fix="1. Must be run on a Director",)
+    rc, out, _ = exe.run("dpkg-query -W vnms")
     f.evidence = out
-    if "NOT_SET" in out or "no" in out.lower():
-        f.status, f.detail = "PASS", "PermitEmptyPasswords is disabled (default 'no')."
+    if "vnms" in out:
+        f.status, f.detail = "PASS", "This is a Director."
     else:
-        f.status, f.detail = "FAIL", "Must be a Director"
+        f.status, f.detail = "FAIL", "This is not a Director. Must be run on a Director. I am exiting now.\n"
+        print ("This is not a Director. Must be run on a Director. I am exiting now.\n")
+        exit(0)
     return f
     
+
 
 
 # ---------------------------------------------------------------------------
@@ -1170,7 +1162,7 @@ def check_030100_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
 
 
 def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030101 | SSH ClientAliveCountMax must be 1."""
+    """UBTU-18-010415| SSH ClientAliveCountMax must be 1."""
     f = Finding("UBTU-18-010415", "SV-219215r853448_rule", "CAT III",
                 "Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1",
         description="The Ubuntu operating system must immediately terminate all network connections associated with SSH traffic after a period of inactivity",
@@ -1796,7 +1788,7 @@ def check_031700_tmux_installed(exe: RemoteExecutor) -> Finding:
 
 ALL_CHECKS = [
     #INITIAL CHECKS
-    check_is_versa_director,
+    check_if_Director,
     # CAT I
     check_v219150_ssh_protocol,
     check_v219151_ssh_empty_passwords,
