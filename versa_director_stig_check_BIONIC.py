@@ -587,7 +587,7 @@ def check_v219171_pw_history(exe: RemoteExecutor) -> Finding:
                      "with 'remember=N' and verified N >= 5.",
         fix="1. Edit /etc/pam.d/common-password\n"
             "2. On the pam_unix.so line, add:  remember=5\n"
-            "   Or add a pam_pwhistory.so line:  password required pam_pwhistory.so remember=5")
+            " It should look like 'password    [success=1 default=ignore]  pam_unix.so obscure  try_first_pass     sha512 remember=5'")
     rc, out, _ = exe.run("grep -E 'remember=5' /etc/pam.d/common-password 2>/dev/null")
     f.evidence = out
     match = re.search(r'remember=(\d+)', out)
@@ -1970,7 +1970,7 @@ def generate_html_report(report: StigReport) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>STIG Compliance Report — {e(report.hostname)} — {e(report.scan_time[:10])}</title>
+<title>Director STIG Compliance Report — {e(report.hostname)} — {e(report.scan_time[:10])}</title>
 <style>
 :root {{
   --pass: #22c55e; --fail: #ef4444; --manual: #f59e0b;
