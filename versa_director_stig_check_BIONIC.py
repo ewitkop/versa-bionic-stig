@@ -966,10 +966,10 @@ def check_v219250_noexec_tmp(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_v219260_firewall(exe: RemoteExecutor) -> Finding:
-    """V-219260 | Firewall must be active."""
+def check_v219161_firewall(exe: RemoteExecutor) -> Finding:
+    """V-219161 | Firewall must be active."""
     f = Finding(
-        "V-219260", "SV-219260r879779_rule", "CAT II",
+        "V-219161", "SV-219161_rule", "CAT II",
         "An application firewall (UFW or iptables) must be installed and active",
         description="A host-based firewall restricts network access to only required services. All Versa Head End appliances run a host-based stateful firewall.",
         check_method="1. Ran 'lsmod | grep ip_tables' to check iptables.\n",    
@@ -1919,7 +1919,7 @@ ALL_CHECKS = [
     check_v219311_group_perms,
     # CAT II — System hardening
     check_v219250_noexec_tmp,
-    check_v219260_firewall,
+    check_v219161_firewall,
     check_v219270_syslog_remote,
     check_v219290_no_games,
     check_v219320_no_world_writable,
