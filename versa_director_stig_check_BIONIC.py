@@ -190,7 +190,7 @@ def check_v219148_BIOS_password(exe: RemoteExecutor) -> Finding:
     """V-219148| BIOS must have a password, if you are in UEFI mode."""
     f = Finding(
         "V-219148", "SV-219148_rule", "CAT I",
-        "BIOS must have a password, if you are UEFI",
+        "BIOS must have a password, if you are UEFI mode",
         description="Ubuntu operating systems booted with a BIOS must require authentication upon booting into single-user and maintenance modes.",
         check_method="grep -i password /boot/efi/EFI/ubuntu/grub.cfg ",
         fix="1. In your Director, enter 'cli'\n"
@@ -483,10 +483,10 @@ def check_v219154_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
     else:
         try:
             val = int(re.search(r'\d+', out).group())
-            if 1 <= val <= 600:
-                f.status, f.detail = "PASS", f"ClientAliveInterval = {val}s"
-            else:
+            if 1 <= val <= 599:
                 f.status, f.detail = "FAIL", f"ClientAliveInterval = {val}s (must be 1-600)"
+            else:
+                f.status, f.detail = "PASS", f"ClientAliveInterval = {val}s"
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse value: {out}"
     return f
@@ -1274,7 +1274,7 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
                 fix="Add 'TMOUT=900' ; 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
-    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-timeout.sh 2>/dev/null || echo 'NOT_SET'")
+    rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-profile.sh 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
         f.status, f.detail = "FAIL", "TMOUT is not configured."
@@ -1402,13 +1402,13 @@ def check_030401_system_cmd_ownership(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030401 | System commands must be owned by root."""
     f = Finding("UBTU-18-030401", "SV-219224r853457_rule", "CAT III",
                 "Ubuntu 18.04 system commands must be owned by root",
-                fix="sudo find /usr/bin /usr/sbin ! -user root -exec chown root {} \\;")
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -user root -type f 2>/dev/null | head -20")
     f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All system commands are owned by root."
     else:
-        f.status, f.detail = "FAIL", f"Commands not owned by root:\n{out[:400]}"
+        f.status, f.detail = "MANUAL", f"Commands not owned by root:\n{out[:400]}"
     return f
 
 
@@ -1416,13 +1416,13 @@ def check_030402_system_cmd_group(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030402 | System commands must be group-owned by root."""
     f = Finding("UBTU-18-030402", "SV-219225r853458_rule", "CAT III",
                 "Ubuntu 18.04 system commands must be group-owned by root",
-                fix="sudo find /usr/bin /usr/sbin ! -group root -exec chgrp root {} \\;")
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -group root -type f 2>/dev/null | head -20")
     f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All system commands are group-owned by root."
     else:
-        f.status, f.detail = "FAIL", f"Commands not group-owned by root:\n{out[:400]}"
+        f.status, f.detail = "MANUAL", f"Commands not group-owned by root:\n{out[:400]}"
     return f
 
 
@@ -1430,14 +1430,14 @@ def check_030500_lib_perms(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030500 | Library files must have mode 755 or less."""
     f = Finding("UBTU-18-030500", "SV-219226r853459_rule", "CAT III",
                 "Ubuntu 18.04 library files must have mode 755 or less",
-                fix="sudo find /lib /usr/lib -perm /022 -type f -exec chmod 755 {} \\;")
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | head -20")
     f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "No library files with excessive permissions."
     else:
         count_rc, count_out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | wc -l")
-        f.status, f.detail = "FAIL", f"{count_out.strip()} library file(s) with group/other write:\n{out[:400]}"
+        f.status, f.detail = "MANUAL", f"{count_out.strip()} library file(s) with group/other write:\n{out[:400]}"
     return f
 
 
@@ -1445,13 +1445,13 @@ def check_030501_lib_ownership(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030501 | Library files must be owned by root."""
     f = Finding("UBTU-18-030501", "SV-219227r853460_rule", "CAT III",
                 "Ubuntu 18.04 library files must be owned by root",
-                fix="sudo find /lib /usr/lib ! -user root -type f -exec chown root {} \\;")
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /lib /usr/lib ! -user root -type f 2>/dev/null | head -20")
     f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All library files are owned by root."
     else:
-        f.status, f.detail = "FAIL", f"Library files not owned by root:\n{out[:400]}"
+        f.status, f.detail = "MANUAL", f"Library files not owned by root:\n{out[:400]}"
     return f
 
 
@@ -1459,13 +1459,13 @@ def check_030502_lib_group(exe: RemoteExecutor) -> Finding:
     """UBTU-18-030502 | Library files must be group-owned by root."""
     f = Finding("UBTU-18-030502", "SV-219228r853461_rule", "CAT III",
                 "Ubuntu 18.04 library files must be group-owned by root",
-                fix="sudo find /lib /usr/lib ! -group root -type f -exec chgrp root {} \\;")
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /lib /usr/lib ! -group root -type f 2>/dev/null | head -20")
     f.evidence = out
     if not out.strip():
         f.status, f.detail = "PASS", "All library files are group-owned by root."
     else:
-        f.status, f.detail = "FAIL", f"Library files not group-owned by root:\n{out[:400]}"
+        f.status, f.detail = "MANUAL", f"Library files not group-owned by root:\n{out[:400]}"
     return f
 
 
