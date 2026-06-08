@@ -226,8 +226,8 @@ def check_v219151_fips_enabled(exe: RemoteExecutor) -> Finding:
     """V-219151| FIPS enabled."""
     f = Finding(
         "V-219151", "SV-219151_rule", "CAT I",
-        "The Ubuntu operating system must implement NIST FIPS-validated cryptography to protect classified information and for the following: to provision digital signatures, to generate cryptographic hashes, and to protect unclassified information requiring confidentiality and cryptographic protection in accordance with applicable federal laws, Executive Orders, directives, policies, regulations, and standards.",
-        description="FIPS enabled",
+        "FIPS must be enabled.",
+        description="The Ubuntu operating system must implement NIST FIPS-validated cryptography to protect classified information and for the following: to provision digital signatures, to generate cryptographic hashes, and to protect unclassified information requiring confidentiality and cryptographic protection in accordance with applicable federal laws, Executive Orders, directives, policies, regulations, and standards.",
         check_method="grep -i 1 /proc/sys/crypto/fips_enabled ",
         fix="1. Versa supplies a FIPS image. Make sure you downloaded and installed the proper FIPS image.\n")
     rc, out, _ = exe.run_sudo("grep -i 1 /proc/sys/crypto/fips_enabled || echo 'NOT_SET'")
@@ -236,6 +236,22 @@ def check_v219151_fips_enabled(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "FAIL", "This is not a FIPS image."
     else:
         f.status, f.detail = "PASS", f"This is a FIPS image and FIPS is enabled."
+    return f
+
+def check_v219158_no_rsh_server(exe: RemoteExecutor) -> Finding:
+    """V-219158| RSH Server should not be installed"""
+    f = Finding(
+        "V-219158", "SV-219158_rule", "CAT I",
+        "RSH Server should not be installed",
+        description="RSH Server should not be installed",
+        check_method="dpkg -l | grep rsh-server",
+        fix="1. Uninstall the rsh-server application.\n")
+    rc, out, _ = exe.run_sudo("dpkg -l | grep rsh-server 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "PASS", "RSH Server is not be installed."
+    else:
+        f.status, f.detail = "FAIL", f"RSH Server should not be installed."
     return f
 
 def check_v219xxx_x(exe: RemoteExecutor) -> Finding:
@@ -399,29 +415,6 @@ def check_v219230_ctrl_alt_del(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "FAIL", "ctrl-alt-del.target is NOT masked."
     return f
 
-
-def check_v219240_fips_mode(exe: RemoteExecutor) -> Finding:
-    """V-219240 | FIPS mode must be enabled."""
-    f = Finding(
-        "V-219240", "SV-219240r879739_rule", "CAT I",
-        "FIPS 140-2 mode must be enabled on the operating system",
-        description="FIPS 140-2 validated cryptography is required for DoD systems to "
-                    "protect sensitive data at rest and in transit.",
-        check_method="Read /proc/sys/crypto/fips_enabled. A value of '1' means FIPS mode "
-                     "is active; '0' means it is not.",
-        fix="1. Install the FIPS kernel:  sudo ua enable fips  (or manually install fips packages)\n"
-            "2. Add 'fips=1' to GRUB_CMDLINE_LINUX in /etc/default/grub\n"
-            "3. sudo update-grub && sudo reboot\n"
-            "4. Verify:  cat /proc/sys/crypto/fips_enabled  (should return 1)")
-    rc, out, _ = exe.run("cat /proc/sys/crypto/fips_enabled 2>/dev/null || echo 'NOT_FOUND'")
-    f.evidence = out
-    if out.strip() == "1":
-        f.status, f.detail = "PASS", "FIPS mode is enabled (fips_enabled=1)."
-    elif out.strip() == "0":
-        f.status, f.detail = "FAIL", "FIPS mode is NOT enabled (fips_enabled=0)."
-    else:
-        f.status, f.detail = "FAIL", f"Cannot determine FIPS status: {out}"
-    return f
 
 
 # ---------------------------------------------------------------------------
@@ -1888,13 +1881,14 @@ ALL_CHECKS = [
     check_v219148_BIOS_password,
     check_v219149_audit_session,
     check_v219151_fips_enabled,
+    check_v219158_no_rsh_server,
     check_v219150_ssh_protocol,
     check_v219151_ssh_empty_passwords,
     check_v219210_grub_permissions,
     check_v219211_no_telnet,
     check_v219212_no_rsh,
     check_v219230_ctrl_alt_del,
-    check_v219240_fips_mode,
+    
     # CAT II — SSH
     check_v219168_ssh_root_login,
     check_v219153_ssh_x11,
