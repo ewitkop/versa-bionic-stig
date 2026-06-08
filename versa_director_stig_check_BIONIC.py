@@ -167,6 +167,100 @@ def check_if_Director(exe: RemoteExecutor) -> Finding:
 #  CAT I — CRITICAL
 # ---------------------------------------------------------------------------
 
+
+def check_v219147_BIOS_password(exe: RemoteExecutor) -> Finding:
+    """V-219147| BIOS must have a password."""
+    f = Finding(
+        "V-219151", "SV-219147_rule", "CAT I",
+        "BIOS must have a password",
+        description="Ubuntu operating systems booted with a BIOS must require authentication upon booting into single-user and maintenance modes.",
+        check_method="grep 'password' /boot/grub/grub.cfg ",
+        fix="1. In your Director, enter 'cli'\n"
+            "2. request system secure-mode enable [grub-password password] [disable-nodejs]\n"
+            "3. Wait for this to complete and then reboot your Director")
+    rc, out, _ = exe.run_sudo("grep  'password' /boot/grub/grub.cfg  2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "There is no password in the grub.cfg file."
+    else:
+        f.status, f.detail = "PASS", f"The password was found in grub.cfg."
+    return f
+
+def check_v219148_BIOS_password(exe: RemoteExecutor) -> Finding:
+    """V-219148| BIOS must have a password, if you are in UEFI mode."""
+    f = Finding(
+        "V-219148", "SV-219148_rule", "CAT I",
+        "BIOS must have a password, if you are UEFI",
+        description="Ubuntu operating systems booted with a BIOS must require authentication upon booting into single-user and maintenance modes.",
+        check_method="grep -i password /boot/efi/EFI/ubuntu/grub.cfg ",
+        fix="1. In your Director, enter 'cli'\n"
+            "2. request system secure-mode enable [grub-password password] [disable-nodejs]\n"
+            "3. Wait for this to complete and then reboot your Director")
+    rc, out, _ = exe.run_sudo("grep 'password' /boot/efi/EFI/ubuntu/grub.cfg 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "MANUAL", "There is no password in the /boot/efi/EFI/ubuntu/grub.cfg file."
+    else:
+        f.status, f.detail = "PASS", f"The password was found in /boot/efi/EFI/ubuntu/grub.cfg."
+    return f
+
+def check_v219149_audit_session(exe: RemoteExecutor) -> Finding:
+    """V-219149| Grub.cfg must have audit=1 on each line."""
+    f = Finding(
+        "V-219149", "SV-219149_rule", "CAT I",
+        "Grub.cfg must have audit=1 on each line",
+        description="Grub.cfg must have audit=1 on each line",
+        check_method="grep ^\s*linux /boot/grub/grub.cfg",
+        fix="1. Add 'audit=1' to each line in grub.cfg")
+    rc, out, _ = exe.run_sudo("grep '^\s*linux' /boot/grub/grub.cfg 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+
+    for i, line in enumerate(out, 1):
+        if not "audit=1" in out:
+             f.status, f.detail = "FAIL", "One of the Linux lines does not include audit=1."
+    else:
+        f.status, f.detail = "PASS", f"All lines have audit=1"
+    return f
+
+def check_v219151_fips_enabled(exe: RemoteExecutor) -> Finding:
+    """V-219151| FIPS enabled."""
+    f = Finding(
+        "V-219151", "SV-219151_rule", "CAT I",
+        "The Ubuntu operating system must implement NIST FIPS-validated cryptography to protect classified information and for the following: to provision digital signatures, to generate cryptographic hashes, and to protect unclassified information requiring confidentiality and cryptographic protection in accordance with applicable federal laws, Executive Orders, directives, policies, regulations, and standards.",
+        description="FIPS enabled",
+        check_method="grep -i 1 /proc/sys/crypto/fips_enabled ",
+        fix="1. Versa supplies a FIPS image. Make sure you downloaded and installed the proper FIPS image.\n")
+    rc, out, _ = exe.run_sudo("grep -i 1 /proc/sys/crypto/fips_enabled || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "This is not a FIPS image."
+    else:
+        f.status, f.detail = "PASS", f"This is a FIPS image and FIPS is enabled."
+    return f
+
+def check_v219xxx_x(exe: RemoteExecutor) -> Finding:
+    """V-219xxx| SSH must not allow empty passwords."""
+    f = Finding(
+        "V-219151", "SV-219151r879589_rule", "CAT I",
+        "SSH must not allow authentication with empty passwords",
+        description="If empty passwords are permitted, any account without a password set "
+                    "becomes a trivial attack vector.",
+        check_method="Searched /etc/ssh/sshd_config for 'PermitEmptyPasswords'. "
+                     "The default in OpenSSH is 'no', so if the directive is absent or "
+                     "set to 'no' the check passes.",
+        fix="1. Edit /etc/ssh/sshd_config.\n"
+            "2. Set:  PermitEmptyPasswords no\n"
+            "3. Restart SSH:  sudo systemctl restart sshd")
+    rc, out, _ = exe.run("grep -i '^PermitEmptyPasswords' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out or "no" in out.lower():
+        f.status, f.detail = "PASS", "PermitEmptyPasswords is disabled (default 'no')."
+    else:
+        f.status, f.detail = "FAIL", f"PermitEmptyPasswords is set to a non-compliant value: {out}"
+    return f
+
+
+
 def check_v219150_ssh_protocol(exe: RemoteExecutor) -> Finding:
     """V-219150 | SSH must use protocol 2."""
     f = Finding(
@@ -334,10 +428,10 @@ def check_v219240_fips_mode(exe: RemoteExecutor) -> Finding:
 #  CAT II — SSH HARDENING
 # ---------------------------------------------------------------------------
 
-def check_v219152_ssh_root_login(exe: RemoteExecutor) -> Finding:
-    """V-219152 | SSH must not permit direct root login."""
+def check_v219168_ssh_root_login(exe: RemoteExecutor) -> Finding:
+    """V-219168 | SSH must not permit direct root login."""
     f = Finding(
-        "V-219152", "SV-219152r879591_rule", "CAT II",
+        "V-219168", "SV-219168r879591_rule", "CAT II",
         "SSH must not allow direct login as root",
         description="Direct root login over SSH bypasses accountability; administrators "
                     "should authenticate with personal accounts and escalate with sudo.",
@@ -1186,7 +1280,7 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
-                fix="Add 'TMOUT=900' and 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
+                fix="Add 'TMOUT=900' ; 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
     rc, out, _ = exe.run_sudo("grep -rhs 'TMOUT' /etc/profile.d/versa-timeout.sh 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
@@ -1790,6 +1884,10 @@ ALL_CHECKS = [
     #INITIAL CHECKS
     check_if_Director,
     # CAT I
+    check_v219147_BIOS_password,
+    check_v219148_BIOS_password,
+    check_v219149_audit_session,
+    check_v219151_fips_enabled,
     check_v219150_ssh_protocol,
     check_v219151_ssh_empty_passwords,
     check_v219210_grub_permissions,
@@ -1798,7 +1896,7 @@ ALL_CHECKS = [
     check_v219230_ctrl_alt_del,
     check_v219240_fips_mode,
     # CAT II — SSH
-    check_v219152_ssh_root_login,
+    check_v219168_ssh_root_login,
     check_v219153_ssh_x11,
     check_v219154_ssh_idle_timeout,
     check_v219155_ssh_alive_count,
@@ -2091,7 +2189,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
 
 <!-- Header -->
 <div class="report-header">
-  <h1>STIG Compliance Report — Versa Director</h1>
+  <h1>Director STIG Compliance Report — Versa Director</h1>
   <div class="meta">
     <span><strong>Host:</strong> {e(report.host)}</span>
     <span><strong>Hostname:</strong> {e(report.hostname)}</span>
