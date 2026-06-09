@@ -415,6 +415,19 @@ def check_v219230_ctrl_alt_del(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "FAIL", "ctrl-alt-del.target is NOT masked."
     return f
 
+def check_030201_ssh_user_env(exe: RemoteExecutor) -> Finding:
+    """V-219314 | SSH must not allow PermitUserEnvironment."""
+    f = Finding("V-219314", "SV-219314r853451_rule", "CAT I",
+                "Ubuntu 18.04 SSH must not allow PermitUserEnvironment",
+                fix="Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config.")
+    rc, out, _ = exe.run_sudo("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out or "no" in out.lower():
+        f.status, f.detail = "PASS", "PermitUserEnvironment is disabled."
+    else:
+        f.status, f.detail = "FAIL", f"PermitUserEnvironment is enabled: {out.strip()}"
+    return f
+
 
 
 # ---------------------------------------------------------------------------
@@ -1250,8 +1263,8 @@ def check_030003_local_console_banner(exe: RemoteExecutor) -> Finding:
 
 
 def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-010402 | Shell TMOUT must be 900 or less."""
-    f = Finding("UBTU-18-010402", "SV-219216r853449_rule", "CAT II",
+    """V-238207 | Shell TMOUT must be 900 or less."""
+    f = Finding("V-238207", "SV-219216r853449_rule", "CAT II",
                 "Ubuntu 18.04 must set a session timeout of 900 seconds or less (TMOUT)",
         description="The Ubuntu operating system must initiate a session lock after a 15-minute period of inactivity for all connection types - readonly",
                 fix="Add 'TMOUT=900' ; 'readonly TMOUT; export TMOUT' to /etc/profile.d/versa-timeout.sh. Make sure it is executable also.")
@@ -1272,34 +1285,9 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_030200_ssh_x11_forwarding(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030200 | SSH X11 forwarding must be disabled."""
-    f = Finding("UBTU-18-030200", "SV-219217r853450_rule", "CAT III",
-                "Ubuntu 18.04 must not allow SSH X11 forwarding",
-                fix="Set 'X11Forwarding no' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^X11Forwarding' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "X11Forwarding is not explicitly set (default may be yes)."
-    elif "no" in out.lower():
-        f.status, f.detail = "PASS", "X11Forwarding is disabled."
-    else:
-        f.status, f.detail = "FAIL", f"X11Forwarding is enabled: {out.strip()}"
-    return f
 
 
-def check_030201_ssh_user_env(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030201 | SSH must not allow PermitUserEnvironment."""
-    f = Finding("UBTU-18-030201", "SV-219218r853451_rule", "CAT III",
-                "Ubuntu 18.04 SSH must not allow PermitUserEnvironment",
-                fix="Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^PermitUserEnvironment' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out or "no" in out.lower():
-        f.status, f.detail = "PASS", "PermitUserEnvironment is disabled."
-    else:
-        f.status, f.detail = "FAIL", f"PermitUserEnvironment is enabled: {out.strip()}"
-    return f
+
 
 
 def check_030202_ssh_use_pam(exe: RemoteExecutor) -> Finding:
@@ -1394,8 +1382,8 @@ def check_030401_system_cmd_ownership(exe: RemoteExecutor) -> Finding:
 
 
 def check_030402_system_cmd_group(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030402 | System commands must be group-owned by root."""
-    f = Finding("UBTU-18-030402", "SV-219225r853458_rule", "CAT III",
+    """V-219213 | System commands must be group-owned by root."""
+    f = Finding("V-219213", "SV-219213r569188_rule", "CAT III",
                 "Ubuntu 18.04 system commands must be group-owned by root",
                 fix="Email your local account team at Versa Networks. We have a POAM for this.")
     rc, out, _ = exe.run("find /usr/bin /usr/sbin ! -group root -type f 2>/dev/null | head -20")
@@ -1869,6 +1857,7 @@ ALL_CHECKS = [
     check_v219211_no_telnet,
     check_v219212_no_rsh,
     check_v219230_ctrl_alt_del,
+    check_030201_ssh_user_env,
     
     # CAT II — SSH
     check_v219168_ssh_root_login,
@@ -1915,15 +1904,14 @@ ALL_CHECKS = [
     check_versa_tls,
     # CAT III
     check_030402_system_cmd_group,
-    check_030200_ssh_x11_forwarding,
-    check_030201_ssh_user_env,
     check_030202_ssh_use_pam,
     check_030203_ssh_log_level,
     check_030300_passwd_sha512,
     check_030301_pam_sha512,
     #check_030400_system_cmd_perms, #the fixes for this can easily break your system
     check_030401_system_cmd_ownership,
-
+    check_030000_ssh_banner,
+    check_030001_login_banner_content,
     check_030500_lib_perms,
     check_030501_lib_ownership,
     check_030502_lib_group,
