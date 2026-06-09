@@ -557,10 +557,10 @@ def check_v219156_ssh_ciphers(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_v219157_ssh_macs(exe: RemoteExecutor) -> Finding:
-    """V-219157 | SSH must use FIPS 140-2 approved MACs."""
+def check_v219312_ssh_macs(exe: RemoteExecutor) -> Finding:
+    """V-219312 | SSH must use FIPS 140-2 approved MACs."""
     f = Finding(
-        "V-219157", "SV-219157r879601_rule", "CAT II",
+        "V-219312", "SV-219312r879601_rule", "CAT II",
         "SSH must only allow FIPS 140-2 compliant MACs",
         description="Message Authentication Codes protect data integrity during SSH sessions.",
         check_method="Read the 'MACs' line from /etc/ssh/sshd_config and compared each MAC "
@@ -1195,24 +1195,7 @@ def check_versa_tls(exe: RemoteExecutor) -> Finding:
 
 # ── CAT III — LOW ────────────────────────────────────────────────────────
 
-def check_030000_ssh_banner(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030000 | SSH must display a login banner."""
-    f = Finding("UBTU-18-030000", "SV-219210r853443_rule", "CAT III",
-                "Ubuntu 18.04 must display the Standard Mandatory DoD Notice before SSH login",
-                fix="Set 'Banner /etc/issue.net' in /etc/ssh/sshd_config and populate /etc/issue.net.")
-    rc, out, _ = exe.run("grep -i '^Banner' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "SSH Banner directive is not set in sshd_config."
-    elif "/etc/issue" in out:
-        rc2, out2, _ = exe.run("wc -l < /etc/issue.net 2>/dev/null || echo '0'")
-        lines = int(out2.strip()) if out2.strip().isdigit() else 0
-        if lines > 0:
-            f.status, f.detail = "PASS", f"SSH Banner is configured: {out.strip()} ({lines} lines)."
-        else:
-            f.status, f.detail = "FAIL", f"Banner file configured but empty or missing ({out.strip()})."
-    else:
-        f.status, f.detail = "FAIL", f"SSH Banner not properly configured: {out.strip()}"
-    return f
+
 
 
 def check_030001_login_banner_content(exe: RemoteExecutor) -> Finding:
@@ -1286,22 +1269,6 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
 
 
 
-
-
-
-
-def check_030202_ssh_use_pam(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030202 | SSH must use PAM."""
-    f = Finding("UBTU-18-030202", "SV-219219r853452_rule", "CAT III",
-                "Ubuntu 18.04 SSH must be configured to use PAM (UsePAM yes)",
-                fix="Set 'UsePAM yes' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^UsePAM' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out or "yes" in out.lower():
-        f.status, f.detail = "PASS", "SSH UsePAM is enabled."
-    else:
-        f.status, f.detail = "FAIL", f"UsePAM is not enabled: {out.strip()}"
-    return f
 
 
 def check_030203_ssh_log_level(exe: RemoteExecutor) -> Finding:
@@ -1437,29 +1404,6 @@ def check_030502_lib_group(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "MANUAL", f"Library files not group-owned by root:\n{out[:400]}"
     return f
 
-
-def check_030600_cron_dirs_restricted(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030600 | Cron directories must have mode 700 or less."""
-    f = Finding("UBTU-18-030600", "SV-219229r853462_rule", "CAT III",
-                "Ubuntu 18.04 cron directories must have mode 700 or more restrictive",
-                fix="sudo chmod 700 /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly")
-    dirs = ["/etc/cron.d", "/etc/cron.daily", "/etc/cron.hourly", "/etc/cron.monthly", "/etc/cron.weekly"]
-    bad = []
-    for d in dirs:
-        rc, out, _ = exe.run(f"stat -c '%a' {d} 2>/dev/null || echo 'MISSING'")
-        f.evidence = out
-        if "MISSING" not in out:
-            try:
-                mode = int(out.strip(), 8)
-                if mode > 0o700:
-                    bad.append(f"{d}={oct(mode)}")
-            except ValueError:
-                pass
-    if not bad:
-        f.status, f.detail = "PASS", "All cron directories have mode 700 or more restrictive."
-    else:
-        f.status, f.detail = "FAIL", f"Cron dirs with excessive permissions: {', '.join(bad)}"
-    return f
 
 
 def check_030601_crontab_restricted(exe: RemoteExecutor) -> Finding:
@@ -1674,8 +1618,8 @@ def check_031002_no_ungrouped_files(exe: RemoteExecutor) -> Finding:
 
 
 def check_031100_ntp_configured(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-031100 | NTP must be configured."""
-    f = Finding("UBTU-18-031100", "SV-219241r853474_rule", "CAT III",
+    """V-219331| NTP must be configured."""
+    f = Finding("V-219331", "SV-219331r853474_rule", "CAT III",
                 "Ubuntu 18.04 must synchronize clocks using an authoritative NTP source",
                 fix="Install and configure chrony or systemd-timesyncd.")
     rc, out, _ = exe.run("timedatectl show --property=NTP --value 2>/dev/null || timedatectl status 2>/dev/null | grep NTP || echo 'UNKNOWN'")
@@ -1702,27 +1646,6 @@ def check_031200_sudo_log(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "MANUAL", f"Unexpected: {out[:120]}"
     return f
 
-
-def check_031201_sudo_timestamp_timeout(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-031201 | sudo must require re-authentication."""
-    f = Finding("UBTU-18-031201", "SV-219243r853476_rule", "CAT III",
-                "Ubuntu 18.04 must enforce sudo timestamp_timeout",
-                fix="Add 'Defaults timestamp_timeout=0' to /etc/sudoers via visudo.")
-    rc, out, _ = exe.run_sudo("grep -rh 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "timestamp_timeout not set (default 15 min cache)."
-    else:
-        match = re.search(r'timestamp_timeout\s*=\s*(-?\d+)', out)
-        if match:
-            val = int(match.group(1))
-            if val <= 0:
-                f.status, f.detail = "PASS", f"sudo timestamp_timeout={val} (re-auth every time)."
-            else:
-                f.status, f.detail = "FAIL", f"sudo timestamp_timeout={val} (should be 0)."
-        else:
-            f.status, f.detail = "MANUAL", f"Could not parse: {out[:120]}"
-    return f
 
 
 def check_031300_noexec_on_tmp(exe: RemoteExecutor) -> Finding:
@@ -1864,7 +1787,7 @@ ALL_CHECKS = [
     check_v219153_ssh_x11,
     check_v219154_ssh_client_alive,
     check_v219156_ssh_ciphers,
-    check_v219157_ssh_macs,
+    check_v219312_ssh_macs,
     check_v219158_ssh_banner,
     # CAT II — Passwords
     check_v219166_pw_minlen,
@@ -1904,18 +1827,15 @@ ALL_CHECKS = [
     check_versa_tls,
     # CAT III
     check_030402_system_cmd_group,
-    check_030202_ssh_use_pam,
     check_030203_ssh_log_level,
     check_030300_passwd_sha512,
     check_030301_pam_sha512,
     #check_030400_system_cmd_perms, #the fixes for this can easily break your system
     check_030401_system_cmd_ownership,
-    check_030000_ssh_banner,
     check_030001_login_banner_content,
     check_030500_lib_perms,
     check_030501_lib_ownership,
     check_030502_lib_group,
-    check_030600_cron_dirs_restricted,
     check_030601_crontab_restricted,
     check_030700_audit_tools_perms,
     check_030701_audit_tools_ownership,
@@ -1927,7 +1847,6 @@ ALL_CHECKS = [
     check_031002_no_ungrouped_files,
     check_031100_ntp_configured,
     check_031200_sudo_log,
-    check_031201_sudo_timestamp_timeout,
     check_031300_noexec_on_tmp,
     check_031301_nosuid_on_tmp,
     check_031400_postfix_local,
