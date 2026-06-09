@@ -465,9 +465,9 @@ def check_v219153_ssh_x11(exe: RemoteExecutor) -> Finding:
 
 
 def check_v219154_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
-    """V-219154 | SSH idle timeout must be <= 600 seconds."""
+    """V-219311 | SSH idle timeout must be <= 600 seconds."""
     f = Finding(
-        "V-219154", "SV-219154r879595_rule", "CAT II",
+        "V-219311", "V-219311_r879595_rule", "CAT II",
         "SSH ClientAliveInterval must be set to 600 seconds or less",
         description="An idle SSH session that remains open indefinitely is an attack vector "
                     "if a user steps away from their workstation.",
@@ -805,8 +805,6 @@ def check_v238230_audit_log_perms(exe: RemoteExecutor) -> Finding:
                 "Ubuntu 18 audit log files must have mode 0600 or less permissive",
                 fix="sudo chmod 0600 /var/log/audit/audit.log.")
     rc, out, _ = exe.run_sudo("stat -c '%a' /var/log/audit/audit.log 2>/dev/null || echo 'NOT_FOUND'")
-
-
     if "NOT_FOUND" in out:
         f.status, f.detail = "FAIL", "Audit log not found at /var/log/audit/audit.log."
     else:
@@ -816,6 +814,27 @@ def check_v238230_audit_log_perms(exe: RemoteExecutor) -> Finding:
             f.detail = f"Audit log mode: {oct(mode)}" + ("" if mode <= 600 else " (must be ≤ 0600)")
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse: {out}"
+    return f
+
+def check_v219152_auditd_75(exe: RemoteExecutor) -> Finding:
+    """V-219152 | auditd should alert at 75%"""
+    f = Finding(
+        "V-219152", "SV-219152_r879663_rule", "CAT II",
+        "Alert when allocated audit record storage volume reaches 75% of the repository maximum audit record storage capacity.",
+        description="Alert when allocated audit record storage volume reaches 75% of the repository maximum audit record storage capacity.",
+        check_method="grep ^space_left_action /etc/audit/auditd.conf",
+        fix="1. sudo vi /etc/audit/auditd.conf and ensure it includes 'disk_full_action = SYSLOG'" )
+    
+    rc, out, _ = exe.run_sudo("grep ^space_left_action /etc/audit/auditd.conf 2>/dev/null")
+    f.evidence = out 
+  
+
+    if "EMAIL" in out:
+        f.status, f.detail = "MANUAL", "Email is what the STIG is looking for. Make sure email is functioning properly."
+    elif "SYSLOG" in out:
+        f.status, f.detail = "MANUAL", "SYSLOG is usually an exception that the auditor will allow. Ensure SIEM is ready to respond to the 75% capacity message."
+    else:
+        f.status, f.detail = "FAIL", f"There is no action for space_left_action "
     return f
 
 
@@ -1227,25 +1246,6 @@ def check_030003_local_console_banner(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "MANUAL", f"/etc/issue exists but review for DoD compliance. First line: {out.splitlines()[0][:80]}"
     return f
 
-
-def check_030100_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030100 | SSH ClientAliveInterval must be 600 or less."""
-    f = Finding("UBTU-18-030100", "SV-219214r853447_rule", "CAT III",
-                "Ubuntu 18.04 must configure SSH ClientAliveInterval to 600 or less",
-                fix="Set 'ClientAliveInterval 600' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveInterval' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "ClientAliveInterval is not set."
-    else:
-        try:
-            val = int(out.split()[-1])
-            if 1 <= val <= 600:
-                f.status, f.detail = "PASS", f"ClientAliveInterval is {val} seconds."
-            else:
-                f.status, f.detail = "FAIL", f"ClientAliveInterval is {val} (must be ≤ 600 and > 0)."
-        except (ValueError, IndexError):
-            f.status, f.detail = "MANUAL", f"Could not parse: {out}"
-    return f
 
 
 def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
@@ -1722,15 +1722,15 @@ def check_031200_sudo_log(exe: RemoteExecutor) -> Finding:
     """UBTU-18-031200 | sudo must log activity."""
     f = Finding("UBTU-18-031200", "SV-219242r853475_rule", "CAT III",
                 "Ubuntu 18.04 must configure sudo to log all activity",
-                fix="Add 'Defaults logfile=\"/var/log/sudo.log\"' to /etc/sudoers via visudo.")
+                fix="Versa Director will log sudo activity to /var/log/syslog. We do not use a seperate file for this.")
     rc, out, _ = exe.run("sudo grep -rh 'Defaults.*logfile' /etc/sudoers /etc/sudoers.d/ 2>/dev/null || echo 'NOT_SET'")
     f.evidence = out
     if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "sudo is not configured to log activity."
+        f.status, f.detail = "MANUAL", "sudo is not configured to log activity."
     elif "logfile" in out.lower():
         f.status, f.detail = "PASS", f"Sudo logging: {out.strip()[:120]}"
     else:
-        f.status, f.detail = "FAIL", f"Unexpected: {out[:120]}"
+        f.status, f.detail = "MANUAL", f"Unexpected: {out[:120]}"
     return f
 
 
@@ -1813,13 +1813,13 @@ def check_031500_auto_updates(exe: RemoteExecutor) -> Finding:
     rc, out, _ = exe.run_sudo("dpkg -l unattended-upgrades 2>/dev/null | grep -E '^ii' || echo 'NOT_INSTALLED'")
     f.evidence = out
     if "NOT_INSTALLED" in out:
-        f.status, f.detail = "FAIL", "unattended-upgrades is not installed."
+        f.status, f.detail = "MANUAL", "unattended-upgrades is not installed. POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks."
     else:
         rc2, out2, _ = exe.run("grep -rhs 'APT::Periodic::Unattended-Upgrade' /etc/apt/apt.conf.d/ 2>/dev/null || echo 'NONE'")
         if "1" in out2:
             f.status, f.detail = "PASS", f"Automatic updates enabled: {out2.strip()[:120]}"
         else:
-            f.status, f.detail = "FAIL", "POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks."
+            f.status, f.detail = "MANUAL", "POAM. This is done in a different way. Versa Networks uses OSSpacks and Spacks."
     return f
 
 
@@ -1911,6 +1911,7 @@ ALL_CHECKS = [
     check_v219200_auditd_installed,
     check_v219201_auditd_enabled,
     check_v238230_audit_log_perms,
+    check_v219152_auditd_75,
     # CAT II — Integrity
     check_v219220_aide_installed,
     # CAT II — File permissions
@@ -1930,7 +1931,6 @@ ALL_CHECKS = [
     check_030102_shell_timeout,
     check_030402_system_cmd_group,
     # CAT III
-    check_030100_ssh_idle_timeout,
     check_030101_ssh_alive_count,
    
     check_030200_ssh_x11_forwarding,
