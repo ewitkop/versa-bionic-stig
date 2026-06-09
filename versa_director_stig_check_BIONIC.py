@@ -16,9 +16,9 @@ Requirements:
 
 Usage:
     python versa_director_stig_check_u18_html.py --host <ip> --user <user> [--key <key>] [--password]
-    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --password
-    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --key ~/.ssh/id_rsa
-    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user admin --password --output report.html
+    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user Administrator --password
+    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user Administrator --key ~/.ssh/id_rsa
+    python versa_director_stig_check_u18_html.py --host 10.0.0.1 --user Administrator --password --output report.html
     
 Note: Ensure you are using the default SSH username that will have the necessary access to check configuration files.
 """
@@ -464,7 +464,7 @@ def check_v219153_ssh_x11(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_v219154_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
+def check_v219154_ssh_client_alive(exe: RemoteExecutor) -> Finding:
     """V-219311 | SSH idle timeout must be <= 600 seconds."""
     f = Finding(
         "V-219311", "V-219311_r879595_rule", "CAT II",
@@ -483,19 +483,19 @@ def check_v219154_ssh_idle_timeout(exe: RemoteExecutor) -> Finding:
     else:
         try:
             val = int(re.search(r'\d+', out).group())
-            if 1 <= val <= 599:
-                f.status, f.detail = "FAIL", f"ClientAliveInterval = {val}s (must be 1-600)"
+            if 1 <= val <= 600:
+                f.status, f.detail = "PASS", f"ClientAliveInterval = {val}s (must be 1-600)"
             else:
-                f.status, f.detail = "PASS", f"ClientAliveInterval = {val}s"
+                f.status, f.detail = "FAIL", f"ClientAliveInterval = {val}s"
         except Exception:
             f.status, f.detail = "MANUAL", f"Could not parse value: {out}"
     return f
 
 
-def check_v219155_ssh_alive_count(exe: RemoteExecutor) -> Finding:
-    """V-219155 | SSH ClientAliveCountMax must be <= 1."""
+def check_v219310_ssh_alive_count(exe: RemoteExecutor) -> Finding:
+    """V-219310| SSH ClientAliveCountMax must be <= 1."""
     f = Finding(
-        "V-219155", "SV-219155r879597_rule", "CAT II",
+        "V-219310", "SV-219310r879597_rule", "CAT II",
         "SSH ClientAliveCountMax must be set to 1",
         description="Combined with ClientAliveInterval, this ensures the session is terminated "
                     "promptly after the interval expires without a response.",
@@ -1248,25 +1248,6 @@ def check_030003_local_console_banner(exe: RemoteExecutor) -> Finding:
 
 
 
-def check_030101_ssh_alive_count(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-010415| SSH ClientAliveCountMax must be 1."""
-    f = Finding("UBTU-18-010415", "SV-219215r853448_rule", "CAT III",
-                "Ubuntu 18.04 must configure SSH ClientAliveCountMax to 1",
-        description="The Ubuntu operating system must immediately terminate all network connections associated with SSH traffic after a period of inactivity",
-        check_method="grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config",
-                fix="Set 'ClientAliveCountMax 1' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^ClientAliveCountMax' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "ClientAliveCountMax is not set (default is 3)."
-    else:
-        try:
-            val = int(out.split()[-1])
-            f.status = "PASS" if val == 1 else "FAIL"
-            f.detail = f"ClientAliveCountMax is {val}" + ("." if val == 1 else " (must be 1).")
-        except (ValueError, IndexError):
-            f.status, f.detail = "MANUAL", f"Could not parse: {out}"
-    return f
-
 
 def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
     """UBTU-18-010402 | Shell TMOUT must be 900 or less."""
@@ -1892,8 +1873,7 @@ ALL_CHECKS = [
     # CAT II — SSH
     check_v219168_ssh_root_login,
     check_v219153_ssh_x11,
-    check_v219154_ssh_idle_timeout,
-    check_v219155_ssh_alive_count,
+    check_v219154_ssh_client_alive,
     check_v219156_ssh_ciphers,
     check_v219157_ssh_macs,
     check_v219158_ssh_banner,
@@ -1929,10 +1909,12 @@ ALL_CHECKS = [
     check_v219331_ntp,
     check_v219350_usb_disabled,
     check_030102_shell_timeout,
-    check_030402_system_cmd_group,
+    # Versa-specific
+    check_versa_services,
+    check_versa_ports,
+    check_versa_tls,
     # CAT III
-    check_030101_ssh_alive_count,
-   
+    check_030402_system_cmd_group,
     check_030200_ssh_x11_forwarding,
     check_030201_ssh_user_env,
     check_030202_ssh_use_pam,
@@ -1968,10 +1950,7 @@ ALL_CHECKS = [
 
                                     
 
-    # Versa-specific
-    check_versa_services,
-    check_versa_ports,
-    check_versa_tls
+  
 ]
 
 
@@ -2067,7 +2046,7 @@ def generate_html_report(report: StigReport) -> str:
 :root {{
   --pass: #22c55e; --fail: #ef4444; --manual: #f59e0b;
   --error: #a855f7; --na: #6b7280;
-  --cat1: #dc2626; --cat2: #f97316; --cat3: #3b82f6;
+  --cat1: #735626; --cat2: #f97316; --cat3: #3b82f6;
   --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
   --text: #1e293b; --muted: #64748b; --code-bg: #f1f5f9;
 }}
@@ -2293,7 +2272,7 @@ Examples:
         """)
     parser.add_argument("--host", required=True, help="Versa Director IP or hostname")
     parser.add_argument("--port", type=int, default=22, help="SSH port (default: 22)")
-    parser.add_argument("--user", required=True, help="SSH username")
+    parser.add_argument("--user", required=True, help="SSH username (Administrator)")
     parser.add_argument("--password", action="store_true", help="Prompt for SSH password")
     parser.add_argument("--key", help="Path to SSH private key")
     parser.add_argument("--output", help="Output HTML file (default: auto-generated)")
@@ -2307,6 +2286,15 @@ Examples:
     print("\n╔══════════════════════════════════════════════════════════════╗")
     print("║  Versa Director STIG Checker — Ubuntu 18.04 (HTML Report)  ║")
     print("╚══════════════════════════════════════════════════════════════╝\n")
+    
+    RED = "\033[31m"
+    RESET = "\033[0m"
+    YELLOW = "\033[33m"
+
+    print("\n")
+    print("\n")
+    print( f"{YELLOW} Make sure to use the Administrator account which will need sudo!{RESET}\n")
+    print("\n")
 
     password = None
     if args.password:
