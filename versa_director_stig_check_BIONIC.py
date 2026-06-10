@@ -1036,6 +1036,20 @@ def check_v219270_syslog_remote(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "PASS", "Remote syslog forwarding is configured."
     return f
 
+def check_030500_lib_perms(exe: RemoteExecutor) -> Finding:
+    """V-219202 | Library files must have mode 755 or less."""
+    f = Finding("V-219202", "SV-219212r853459_rule", "CAT II",
+                "Ubuntu 18.04 library files must have mode 755 or less",
+                fix="Email your local account team at Versa Networks. We have a POAM for this.")
+    rc, out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | head -20")
+    f.evidence = out
+    if not out.strip():
+        f.status, f.detail = "PASS", "No library files with excessive permissions."
+    else:
+        count_rc, count_out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | wc -l")
+        f.status, f.detail = "MANUAL", f"{count_out.strip()} library file(s) with group/other write:\n{out[:400]}"
+    return f
+
 
 def check_v219290_no_games(exe: RemoteExecutor) -> Finding:
     """V-219290 | Unauthorized packages (games) must not be installed."""
@@ -1125,6 +1139,34 @@ def check_v219331_ntp(exe: RemoteExecutor) -> Finding:
         f.status, f.detail = "FAIL", "No NTP server found."
     else:
         f.status, f.detail = "PASS", "An NTP server was found in /etc/ntp/ntp/servers."
+    return f
+
+def check_030900_no_duplicate_uids(exe: RemoteExecutor) -> Finding:
+    """V-219325 | Must not have duplicate UIDs."""
+    f = Finding("V-219325", "SV-219235r853469_rule", "CAT II",
+                "Ubuntu 18.04 must not contain duplicate UIDs",
+                fix="Correct duplicate UIDs in /etc/passwd.")
+    rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/passwd | sort | uniq -d 2>/dev/null")
+    f.evidence = out
+    if not out.strip():
+        f.status, f.detail = "PASS", "No duplicate UIDs found."
+    else:
+        f.status, f.detail = "FAIL", f"Duplicate UIDs: {out.strip()}"
+    return f
+
+def check_030300_passwd_sha512(exe: RemoteExecutor) -> Finding:
+    """UBTU-18-030300 | Passwords must be hashed with SHA-512."""
+    f = Finding("UBTU-18-030300", "SV-219221r853454_rule", "CAT II",
+                "Ubuntu 18.04 must use SHA-512 for password hashing",
+                fix="Set 'ENCRYPT_METHOD SHA512' in /etc/login.defs.")
+    rc, out, _ = exe.run_sudo("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
+    f.evidence = out
+    if "NOT_SET" in out:
+        f.status, f.detail = "FAIL", "ENCRYPT_METHOD is not set."
+    elif "SHA512" in out.upper():
+        f.status, f.detail = "PASS", f"Password hashing: {out.strip()}"
+    else:
+        f.status, f.detail = "FAIL", f"Weak hashing: {out.strip()} (must be SHA512)."
     return f
 
 # ---------------------------------------------------------------------------
@@ -1271,36 +1313,6 @@ def check_030102_shell_timeout(exe: RemoteExecutor) -> Finding:
 
 
 
-def check_030203_ssh_log_level(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030203 | SSH LogLevel must be INFO or VERBOSE."""
-    f = Finding("UBTU-18-030203", "SV-219220r853453_rule", "CAT III",
-                "Ubuntu 18.04 SSH must set LogLevel to INFO or VERBOSE",
-                fix="Set 'LogLevel VERBOSE' in /etc/ssh/sshd_config.")
-    rc, out, _ = exe.run_sudo("grep -i '^LogLevel' /etc/ssh/sshd_config 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out:
-        f.status, f.detail = "PASS", "LogLevel not set (defaults to INFO)."
-    elif "INFO" in out.upper() or "VERBOSE" in out.upper():
-        f.status, f.detail = "PASS", f"SSH LogLevel: {out.strip()}"
-    else:
-        f.status, f.detail = "FAIL", f"SSH LogLevel is not INFO or VERBOSE: {out.strip()}"
-    return f
-
-
-def check_030300_passwd_sha512(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030300 | Passwords must be hashed with SHA-512."""
-    f = Finding("UBTU-18-030300", "SV-219221r853454_rule", "CAT III",
-                "Ubuntu 18.04 must use SHA-512 for password hashing",
-                fix="Set 'ENCRYPT_METHOD SHA512' in /etc/login.defs.")
-    rc, out, _ = exe.run_sudo("grep -i '^ENCRYPT_METHOD' /etc/login.defs 2>/dev/null || echo 'NOT_SET'")
-    f.evidence = out
-    if "NOT_SET" in out:
-        f.status, f.detail = "FAIL", "ENCRYPT_METHOD is not set."
-    elif "SHA512" in out.upper():
-        f.status, f.detail = "PASS", f"Password hashing: {out.strip()}"
-    else:
-        f.status, f.detail = "FAIL", f"Weak hashing: {out.strip()} (must be SHA512)."
-    return f
 
 
 def check_030301_pam_sha512(exe: RemoteExecutor) -> Finding:
@@ -1362,19 +1374,7 @@ def check_030402_system_cmd_group(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_030500_lib_perms(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030500 | Library files must have mode 755 or less."""
-    f = Finding("UBTU-18-030500", "SV-219226r853459_rule", "CAT III",
-                "Ubuntu 18.04 library files must have mode 755 or less",
-                fix="Email your local account team at Versa Networks. We have a POAM for this.")
-    rc, out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | head -20")
-    f.evidence = out
-    if not out.strip():
-        f.status, f.detail = "PASS", "No library files with excessive permissions."
-    else:
-        count_rc, count_out, _ = exe.run("find /lib /usr/lib -perm /022 -type f 2>/dev/null | wc -l")
-        f.status, f.detail = "MANUAL", f"{count_out.strip()} library file(s) with group/other write:\n{out[:400]}"
-    return f
+
 
 
 def check_030501_lib_ownership(exe: RemoteExecutor) -> Finding:
@@ -1550,18 +1550,7 @@ def check_030801_home_dir_ownership(exe: RemoteExecutor) -> Finding:
     return f
 
 
-def check_030900_no_duplicate_uids(exe: RemoteExecutor) -> Finding:
-    """UBTU-18-030900 | Must not have duplicate UIDs."""
-    f = Finding("UBTU-18-030900", "SV-219236r853469_rule", "CAT III",
-                "Ubuntu 18.04 must not contain duplicate UIDs",
-                fix="Correct duplicate UIDs in /etc/passwd.")
-    rc, out, _ = exe.run(r"awk -F: '{print $3}' /etc/passwd | sort | uniq -d 2>/dev/null")
-    f.evidence = out
-    if not out.strip():
-        f.status, f.detail = "PASS", "No duplicate UIDs found."
-    else:
-        f.status, f.detail = "FAIL", f"Duplicate UIDs: {out.strip()}"
-    return f
+
 
 
 def check_030901_no_duplicate_gids(exe: RemoteExecutor) -> Finding:
@@ -1620,7 +1609,7 @@ def check_031002_no_ungrouped_files(exe: RemoteExecutor) -> Finding:
 def check_031100_ntp_configured(exe: RemoteExecutor) -> Finding:
     """V-219331| NTP must be configured."""
     f = Finding("V-219331", "SV-219331r853474_rule", "CAT III",
-                "Ubuntu 18.04 must synchronize clocks using an authoritative NTP source",
+                "Ubuntu 18.04 must run the NTP service.",
                 fix="Install and configure chrony or systemd-timesyncd.")
     rc, out, _ = exe.run("timedatectl show --property=NTP --value 2>/dev/null || timedatectl status 2>/dev/null | grep NTP || echo 'UNKNOWN'")
     rc2, out2, _ = exe.run("systemctl is-active chrony systemd-timesyncd ntp 2>/dev/null || echo 'INACTIVE'")
@@ -1803,6 +1792,7 @@ ALL_CHECKS = [
     check_v219200_auditd_installed,
     check_v219201_auditd_enabled,
     check_v238230_audit_log_perms,
+    check_030500_lib_perms,
     check_v219152_auditd_75,
     # CAT II — Integrity
     check_v219220_aide_installed,
@@ -1821,19 +1811,18 @@ ALL_CHECKS = [
     check_v219331_ntp,
     check_v219350_usb_disabled,
     check_030102_shell_timeout,
+    check_030900_no_duplicate_uids,
+    check_030300_passwd_sha512,
     # Versa-specific
     check_versa_services,
     check_versa_ports,
     check_versa_tls,
     # CAT III
     check_030402_system_cmd_group,
-    check_030203_ssh_log_level,
-    check_030300_passwd_sha512,
     check_030301_pam_sha512,
     #check_030400_system_cmd_perms, #the fixes for this can easily break your system
     check_030401_system_cmd_ownership,
     check_030001_login_banner_content,
-    check_030500_lib_perms,
     check_030501_lib_ownership,
     check_030502_lib_group,
     check_030601_crontab_restricted,
@@ -1842,7 +1831,6 @@ ALL_CHECKS = [
     check_030702_audit_tools_group,
     check_030800_home_dir_perms,
     check_030801_home_dir_ownership,
-    check_030900_no_duplicate_uids,
     check_031001_no_unowned_files,
     check_031002_no_ungrouped_files,
     check_031100_ntp_configured,
